@@ -1,0 +1,11 @@
+node_modules/
+coverage/
+dist/
+.DS_Store
+
+# Obsidian plugin build output
+main.js
+
+# Local development scratch
+.env
+.env.local
