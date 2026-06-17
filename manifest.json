@@ -1,7 +1,7 @@
 {
   "id": "heading-mindmap",
   "name": "Heading Mindmap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.8.7",
   "description": "Open Markdown headings as editable mind maps and edit section content in a bottom pane.",
   "author": "JhihJian",

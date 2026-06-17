@@ -119,7 +119,7 @@ export class HeadingMindmapView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    this.registerDomEvent(document, "keydown", (event) => {
+    this.registerDomEvent(activeDocument, "keydown", (event) => {
       this.handleDocumentKeydown(event);
     });
   }
@@ -941,12 +941,15 @@ export class HeadingMindmapView extends ItemView {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return false;
 
-    const activeEl = document.activeElement;
+    const activeEl = activeDocument.activeElement;
     return shouldHandleDocumentShortcutTarget({
       targetInsideView: this.containerEl.contains(target),
       targetInsideModal: Boolean(target.closest(".modal")),
       activeViewIsMindmap: this.plugin.app.workspace.getActiveViewOfType(HeadingMindmapView) === this,
-      activeElementIsPageRoot: activeEl === document.body || activeEl === document.documentElement || activeEl === null
+      activeElementIsPageRoot:
+        activeEl === activeDocument.body ||
+        activeEl === activeDocument.documentElement ||
+        activeEl === null
     });
   }
 

@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile, normalizePath } from "obsidian";
+import { Plugin, TFile, normalizePath } from "obsidian";
 import { chooseMindmapSourcePath } from "./active-mindmap-file";
 import { resolveFileNodePath } from "./file-node-target";
 import {
@@ -64,10 +64,6 @@ export default class HeadingMindmapPlugin extends Plugin {
     });
   }
 
-  onunload(): void {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_MINDMAP);
-  }
-
   async activateView(): Promise<void> {
     const file = await this.getActiveOrDefaultMindmapFile();
     const activeView = this.app.workspace.getActiveViewOfType(HeadingMindmapView);
@@ -78,7 +74,7 @@ export default class HeadingMindmapPlugin extends Plugin {
       active: true,
       state: { filePath: file.path } satisfies MindmapViewState
     });
-    this.app.workspace.revealLeaf(leaf);
+    void this.app.workspace.revealLeaf(leaf);
   }
 
   async readMindmapFile(file: TFile): Promise<MindNode> {

@@ -36,7 +36,7 @@ export function normalizePluginData(value: unknown): HeadingMindmapPluginData {
                   (key): key is string => typeof key === "string"
                 )
               : [],
-            viewport: getStoredViewportState(state as StoredMindmapState)
+            viewport: getStoredViewportState(state)
           }
         ])
     )

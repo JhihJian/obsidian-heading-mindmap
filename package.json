@@ -1,6 +1,6 @@
 {
   "name": "obsidian-heading-mindmap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Open Markdown headings as editable mind maps and edit section content in a bottom pane.",
   "main": "main.js",
   "type": "module",
@@ -24,12 +24,15 @@
   },
   "author": "JhihJian",
   "license": "MIT",
+  "dependencies": {
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
+    "tslib": "^2.8.1"
+  },
   "devDependencies": {
     "@types/node": "^20.19.0",
-    "builtin-modules": "^3.3.0",
     "esbuild": "^0.25.5",
     "obsidian": "^1.8.7",
-    "tslib": "^2.8.1",
     "typescript": "^5.8.3",
     "vitest": "^3.2.3"
   }
