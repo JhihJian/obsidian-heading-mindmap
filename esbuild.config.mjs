@@ -6,7 +6,7 @@ const prod = process.argv[2] === "production";
 
 const context = await esbuild.context({
   banner: {
-    js: "/* Obsidian Outline Mindmap */"
+    js: "/* Obsidian Heading Mindmap */"
   },
   entryPoints: ["src/main.ts"],
   bundle: true,

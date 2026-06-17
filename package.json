@@ -1,13 +1,14 @@
 {
-  "name": "obsidian-outline-mindmap",
+  "name": "obsidian-heading-mindmap",
   "version": "0.1.0",
-  "description": "Obsidian 思维导图插件：用导图编辑 Markdown 标题结构，并在下方面板编辑正文。",
+  "description": "Open Markdown headings as editable mind maps and edit section content in a bottom pane.",
   "main": "main.js",
   "type": "module",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "deploy": "npm run build && node scripts/deploy-plugin.mjs",
+    "install:local": "npm run build && node scripts/install-local.mjs",
     "test": "vitest run",
     "test:e2e:obsidian": "node scripts/verify-obsidian-e2e.mjs",
     "test:watch": "vitest"
@@ -15,12 +16,13 @@
   "keywords": [
     "obsidian",
     "mindmap",
+    "heading",
     "outline"
   ],
   "engines": {
     "node": ">=22"
   },
-  "author": "",
+  "author": "JhihJian",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.19.0",

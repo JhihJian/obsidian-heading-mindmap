@@ -1,6 +1,6 @@
-# Outline Mindmap
+# Heading Mindmap
 
-Outline Mindmap 是一个 Obsidian 思维导图插件，让 Markdown 笔记可以用“可编辑思维导图”方式打开。
+Heading Mindmap 是一个 Obsidian 思维导图插件，让 Markdown 笔记可以用“可编辑思维导图”方式打开。
 
 导图是笔记内容的结构化视图。标题层级决定节点层级；上方导图只显示标题树，下方正文区域以阅读/编辑模式查看和编辑当前节点正文，结果写回原 Markdown 文件。
 
@@ -72,7 +72,7 @@ npm run deploy -- "D:\path\to\your\test-vault"
 也可以手动复制以下文件到库目录：
 
 ```text
-.obsidian/plugins/outline-mindmap/
+.obsidian/plugins/heading-mindmap/
 ```
 
 需要复制：
@@ -83,4 +83,4 @@ manifest.json
 styles.css
 ```
 
-然后在 Obsidian 设置中启用 `Outline Mindmap`，用命令面板执行 `打开思维导图`。命令默认在新 tab 打开导图以保留当前 Markdown 源码视图；如果当前 tab 已经是同一文件的导图，则复用当前导图。
+然后在 Obsidian 设置中启用 `Heading Mindmap`，用命令面板执行 `打开思维导图`。命令默认在新 tab 打开导图以保留当前 Markdown 源码视图；如果当前 tab 已经是同一文件的导图，则复用当前导图。

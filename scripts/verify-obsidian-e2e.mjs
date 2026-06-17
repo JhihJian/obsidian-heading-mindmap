@@ -9,7 +9,7 @@ const root = join(tmpdir(), `obsidian-mindmap-e2e-${port}`);
 const vault = join(root, "vault");
 const userData = join(root, "user-data");
 const obsidianExe = process.env.OBSIDIAN_EXE ?? "C:\\Program Files\\Obsidian\\Obsidian.exe";
-const pluginDir = join(vault, ".obsidian", "plugins", "outline-mindmap");
+const pluginDir = join(vault, ".obsidian", "plugins", "heading-mindmap");
 
 function ps(script) {
   return execFileSync("powershell", ["-NoProfile", "-Command", script], {
@@ -35,12 +35,12 @@ function setupVault() {
   copyFileSync("styles.css", join(pluginDir, "styles.css"));
   writeFileSync(join(vault, ".obsidian", "app.json"), "{}", "utf8");
   writeFileSync(join(vault, ".obsidian", "appearance.json"), "{}", "utf8");
-  writeFileSync(join(vault, ".obsidian", "community-plugins.json"), "[\"outline-mindmap\"]", "utf8");
+  writeFileSync(join(vault, ".obsidian", "community-plugins.json"), "[\"heading-mindmap\"]", "utf8");
   writeFileSync(
     join(userData, "obsidian.json"),
     JSON.stringify({
       vaults: {
-        "outline-mindmap-e2e": {
+        "heading-mindmap-e2e": {
           path: vault,
           ts: Date.now(),
           open: true
@@ -191,12 +191,12 @@ async function main() {
       (async () => {
         await app.plugins.setEnable(true);
         await app.plugins.loadManifests();
-        await app.plugins.enablePluginAndSave('outline-mindmap');
+        await app.plugins.enablePluginAndSave('heading-mindmap');
         for (let i = 0; i < 20; i += 1) {
-          if (app.commands.commands['outline-mindmap:open-outline-mindmap']) break;
+          if (app.commands.commands['heading-mindmap:open']) break;
           await new Promise((resolve) => setTimeout(resolve, 250));
         }
-        for (const leaf of app.workspace.getLeavesOfType('outline-mindmap-view')) {
+        for (const leaf of app.workspace.getLeavesOfType('heading-mindmap-view')) {
           leaf.detach();
         }
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -213,10 +213,10 @@ async function main() {
         app.workspace.revealLeaf(markdownLeaf);
         await new Promise((resolve) => setTimeout(resolve, 700));
 
-        await app.commands.executeCommandById('outline-mindmap:open-outline-mindmap');
+        await app.commands.executeCommandById('heading-mindmap:open');
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        const visibleView = () => Array.from(document.querySelectorAll('.outline-mindmap-view')).find((view) => {
+        const visibleView = () => Array.from(document.querySelectorAll('.heading-mindmap-view')).find((view) => {
           const rect = view.getBoundingClientRect();
           return rect.width > 0 && rect.height > 0;
         });
@@ -224,53 +224,53 @@ async function main() {
           title: document.title,
           activeType: app.workspace.activeLeaf?.view?.getViewType?.() || null,
           activeFile: app.workspace.getActiveFile()?.path || null,
-          pluginLoaded: Boolean(app.plugins.plugins['outline-mindmap']),
-          pluginEnabled: app.plugins.enabledPlugins?.has?.('outline-mindmap') ?? null,
-          commands: Object.keys(app.commands.commands).filter((id) => id.includes('outline-mindmap')).sort(),
-          mindmapLeaves: app.workspace.getLeavesOfType('outline-mindmap-view').length,
-          totalMindmapViews: document.querySelectorAll('.outline-mindmap-view').length,
+          pluginLoaded: Boolean(app.plugins.plugins['heading-mindmap']),
+          pluginEnabled: app.plugins.enabledPlugins?.has?.('heading-mindmap') ?? null,
+          commands: Object.keys(app.commands.commands).filter((id) => id.includes('heading-mindmap')).sort(),
+          mindmapLeaves: app.workspace.getLeavesOfType('heading-mindmap-view').length,
+          totalMindmapViews: document.querySelectorAll('.heading-mindmap-view').length,
           leafTypes: Array.from(document.querySelectorAll('.workspace-leaf-content')).map((leaf) => leaf.getAttribute('data-type'))
         });
-        const labels = (root) => Array.from(root.querySelectorAll('.outline-mindmap-node')).map((node) => (
-          (node.querySelector('.outline-mindmap-node-badge')?.textContent || '') + ':' +
-          (node.querySelector('.outline-mindmap-node-title')?.textContent || '')
+        const labels = (root) => Array.from(root.querySelectorAll('.heading-mindmap-node')).map((node) => (
+          (node.querySelector('.heading-mindmap-node-badge')?.textContent || '') + ':' +
+          (node.querySelector('.heading-mindmap-node-title')?.textContent || '')
         ));
-        const findByBadge = (root, badge) => Array.from(root.querySelectorAll('.outline-mindmap-node')).find(
-          (node) => node.querySelector('.outline-mindmap-node-badge')?.textContent === badge
+        const findByBadge = (root, badge) => Array.from(root.querySelectorAll('.heading-mindmap-node')).find(
+          (node) => node.querySelector('.heading-mindmap-node-badge')?.textContent === badge
         );
-        const findByLabel = (root, prefix) => Array.from(root.querySelectorAll('.outline-mindmap-node')).find(
-          (node) => ((node.querySelector('.outline-mindmap-node-badge')?.textContent || '') + ':' +
-            (node.querySelector('.outline-mindmap-node-title')?.textContent || '')).startsWith(prefix)
+        const findByLabel = (root, prefix) => Array.from(root.querySelectorAll('.heading-mindmap-node')).find(
+          (node) => ((node.querySelector('.heading-mindmap-node-badge')?.textContent || '') + ':' +
+            (node.querySelector('.heading-mindmap-node-title')?.textContent || '')).startsWith(prefix)
         );
-        const findExactLabel = (root, label) => Array.from(root.querySelectorAll('.outline-mindmap-node')).find(
-          (node) => ((node.querySelector('.outline-mindmap-node-badge')?.textContent || '') + ':' +
-            (node.querySelector('.outline-mindmap-node-title')?.textContent || '')) === label
+        const findExactLabel = (root, label) => Array.from(root.querySelectorAll('.heading-mindmap-node')).find(
+          (node) => ((node.querySelector('.heading-mindmap-node-badge')?.textContent || '') + ':' +
+            (node.querySelector('.heading-mindmap-node-title')?.textContent || '')) === label
         );
         const selected = (root) => ({
-          title: root.querySelector('.outline-mindmap-node.is-selected .outline-mindmap-node-title')?.textContent || '',
-          badge: root.querySelector('.outline-mindmap-node.is-selected .outline-mindmap-node-badge')?.textContent || ''
+          title: root.querySelector('.heading-mindmap-node.is-selected .heading-mindmap-node-title')?.textContent || '',
+          badge: root.querySelector('.heading-mindmap-node.is-selected .heading-mindmap-node-badge')?.textContent || ''
         });
         const waitForTitleInput = async () => {
           for (let i = 0; i < 20; i += 1) {
             const viewRoot = visibleView();
-            const input = viewRoot?.querySelector('.outline-mindmap-node-title-input');
+            const input = viewRoot?.querySelector('.heading-mindmap-node-title-input');
             if (input) return { root: viewRoot, input };
             await new Promise((resolve) => setTimeout(resolve, 50));
           }
           return { root: visibleView(), input: null };
         };
         const getCtrlEnterFocusState = (viewRoot) => {
-          const view = app.workspace.getLeavesOfType('outline-mindmap-view')[0]?.view;
+          const view = app.workspace.getLeavesOfType('heading-mindmap-view')[0]?.view;
           return {
             selected: selected(viewRoot),
             internalSelected: view?.getSelectedNode?.()?.title || null,
             bodyPaneMode: view?.bodyPaneMode || null,
             hasBodyEditor: Boolean(view?.bodyEditorView),
-            bodyTitle: viewRoot?.querySelector('.outline-mindmap-body-title')?.textContent || null,
-            modeButtonCount: viewRoot?.querySelectorAll('.outline-mindmap-body-mode-button').length ?? 0,
+            bodyTitle: viewRoot?.querySelector('.heading-mindmap-body-title')?.textContent || null,
+            modeButtonCount: viewRoot?.querySelectorAll('.heading-mindmap-body-mode-button').length ?? 0,
             sourceView: viewRoot?.querySelectorAll('.markdown-source-view.mod-cm6.cm-s-obsidian').length ?? 0,
             focusedEditor: Boolean(document.activeElement?.closest?.('.cm-editor')),
-            cmFocused: viewRoot?.querySelectorAll('.outline-mindmap-body-pane .cm-editor.cm-focused').length ?? 0
+            cmFocused: viewRoot?.querySelectorAll('.heading-mindmap-body-pane .cm-editor.cm-focused').length ?? 0
           };
         };
         const waitForFocusedBodySource = async () => {
@@ -316,37 +316,37 @@ async function main() {
         if (!root) {
           return { setupFailure: pageState() };
         }
-        const canvas = () => root.querySelector('.outline-mindmap-canvas');
+        const canvas = () => root.querySelector('.heading-mindmap-canvas');
         const rootNode = findByBadge(root, 'H1');
-        const titleRect = rootNode.querySelector('.outline-mindmap-node-title').getBoundingClientRect();
+        const titleRect = rootNode.querySelector('.heading-mindmap-node-title').getBoundingClientRect();
         const nodeRect = rootNode.getBoundingClientRect();
-        const bodyPane = root.querySelector('.outline-mindmap-body-pane');
+        const bodyPane = root.querySelector('.heading-mindmap-body-pane');
         const canvasEl = canvas();
         report.open = {
           activeType: app.workspace.activeLeaf?.view?.getViewType?.() || null,
           activeFile: app.workspace.getActiveFile()?.path || null,
-          leaves: app.workspace.getLeavesOfType('outline-mindmap-view').length,
+          leaves: app.workspace.getLeavesOfType('heading-mindmap-view').length,
           markdownLeaves: app.workspace.getLeavesOfType('markdown').length,
           labels: labels(root),
-          nodeButtons: root.querySelectorAll('.outline-mindmap-node button').length,
-          bodyPreview: root.querySelectorAll('.outline-mindmap-body-preview.markdown-reading-view').length,
-          markdownRendered: root.querySelectorAll('.outline-mindmap-body-pane .markdown-preview-view.markdown-rendered').length,
-          hasStrong: Boolean(root.querySelector('.outline-mindmap-body-pane strong')),
-          hasList: Boolean(root.querySelector('.outline-mindmap-body-pane ul')),
-          hasInternalLink: Boolean(root.querySelector('.outline-mindmap-body-pane .internal-link')),
+          nodeButtons: root.querySelectorAll('.heading-mindmap-node button').length,
+          bodyPreview: root.querySelectorAll('.heading-mindmap-body-preview.markdown-reading-view').length,
+          markdownRendered: root.querySelectorAll('.heading-mindmap-body-pane .markdown-preview-view.markdown-rendered').length,
+          hasStrong: Boolean(root.querySelector('.heading-mindmap-body-pane strong')),
+          hasList: Boolean(root.querySelector('.heading-mindmap-body-pane ul')),
+          hasInternalLink: Boolean(root.querySelector('.heading-mindmap-body-pane .internal-link')),
           canvasHeight: Math.round(canvasEl.getBoundingClientRect().height),
           bodyHeight: Math.round(bodyPane.getBoundingClientRect().height),
           titleCenterDelta: Math.round(((titleRect.top + titleRect.height / 2) - (nodeRect.top + nodeRect.height / 2)) * 10) / 10
         };
 
-        root.querySelector('.outline-mindmap-body-mode-button')?.click();
+        root.querySelector('.heading-mindmap-body-mode-button')?.click();
         await new Promise((resolve) => setTimeout(resolve, 700));
         report.sourceMode = {
           sourceView: root.querySelectorAll('.markdown-source-view.mod-cm6.cm-s-obsidian').length,
-          cmEditor: root.querySelectorAll('.outline-mindmap-body-pane .cm-editor').length,
+          cmEditor: root.querySelectorAll('.heading-mindmap-body-pane .cm-editor').length,
           activeInsideEditor: Boolean(document.activeElement?.closest?.('.cm-editor'))
         };
-        root.querySelector('.outline-mindmap-body-mode-button')?.click();
+        root.querySelector('.heading-mindmap-body-mode-button')?.click();
         await new Promise((resolve) => setTimeout(resolve, 700));
 
         findExactLabel(root, 'H1:产品路线图')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -367,14 +367,14 @@ async function main() {
         root = visibleView();
         report.externalRefresh = {
           labels: labels(root),
-          bodyTitle: root.querySelector('.outline-mindmap-body-title')?.textContent || ''
+          bodyTitle: root.querySelector('.heading-mindmap-body-title')?.textContent || ''
         };
 
         const fileNode = findByLabel(root, 'MD:');
         const fileNodeBefore = {
           found: Boolean(fileNode),
-          label: fileNode ? ((fileNode.querySelector('.outline-mindmap-node-badge')?.textContent || '') + ':' +
-            (fileNode.querySelector('.outline-mindmap-node-title')?.textContent || '')) : null,
+          label: fileNode ? ((fileNode.querySelector('.heading-mindmap-node-badge')?.textContent || '') + ':' +
+            (fileNode.querySelector('.heading-mindmap-node-title')?.textContent || '')) : null,
           activeFile: app.workspace.getActiveFile()?.path || null,
           linkDest: app.metadataCache.getFirstLinkpathDest('目标文件.md', '产品路线图.md')?.path || null,
           vaultHasTarget: Boolean(app.vault.getAbstractFileByPath('目标文件.md'))
@@ -387,12 +387,12 @@ async function main() {
         root = visibleView();
         const expandedFileLabels = labels(root);
         const notices = Array.from(document.querySelectorAll('.notice')).map((notice) => notice.textContent || '');
-        const external = Array.from(root.querySelectorAll('.outline-mindmap-node')).find(
-          (node) => node.querySelector('.outline-mindmap-node-title')?.textContent === '外部章节'
+        const external = Array.from(root.querySelectorAll('.heading-mindmap-node')).find(
+          (node) => node.querySelector('.heading-mindmap-node-title')?.textContent === '外部章节'
         );
         external?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
         await new Promise((resolve) => setTimeout(resolve, 300));
-        const beforeReadonlyButtons = root.querySelectorAll('.outline-mindmap-node-title-input').length;
+        const beforeReadonlyButtons = root.querySelectorAll('.heading-mindmap-node-title-input').length;
         canvas().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
         await new Promise((resolve) => setTimeout(resolve, 300));
         report.fileOutline = {
@@ -402,9 +402,9 @@ async function main() {
           notices,
           selectedExternal: selected(root),
           readonlyInputBefore: beforeReadonlyButtons,
-          readonlyInputAfterEnter: root.querySelectorAll('.outline-mindmap-node-title-input').length,
-          readonlyBodyButtonCount: root.querySelectorAll('.outline-mindmap-body-mode-button').length,
-          bodyMeta: root.querySelector('.outline-mindmap-body-meta')?.textContent || ''
+          readonlyInputAfterEnter: root.querySelectorAll('.heading-mindmap-node-title-input').length,
+          readonlyBodyButtonCount: root.querySelectorAll('.heading-mindmap-body-mode-button').length,
+          bodyMeta: root.querySelector('.heading-mindmap-body-meta')?.textContent || ''
         };
 
         const fileNodeAfterReadonlyCheck = findByLabel(root, 'MD:');
@@ -412,16 +412,16 @@ async function main() {
         await new Promise((resolve) => setTimeout(resolve, 900));
         root = visibleView();
 
-        await app.workspace.getLeavesOfType('outline-mindmap-view')[0]?.view?.toggleListItemExpansion?.();
+        await app.workspace.getLeavesOfType('heading-mindmap-view')[0]?.view?.toggleListItemExpansion?.();
         await new Promise((resolve) => setTimeout(resolve, 800));
         root = visibleView();
-        const listOn = root.querySelectorAll('.outline-mindmap-node.is-list-item').length;
-        await app.workspace.getLeavesOfType('outline-mindmap-view')[0]?.view?.toggleListItemExpansion?.();
+        const listOn = root.querySelectorAll('.heading-mindmap-node.is-list-item').length;
+        await app.workspace.getLeavesOfType('heading-mindmap-view')[0]?.view?.toggleListItemExpansion?.();
         await new Promise((resolve) => setTimeout(resolve, 800));
         root = visibleView();
         report.listItems = {
           on: listOn,
-          off: root.querySelectorAll('.outline-mindmap-node.is-list-item').length
+          off: root.querySelectorAll('.heading-mindmap-node.is-list-item').length
         };
 
         findExactLabel(root, 'H1:产品路线图')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -455,10 +455,10 @@ async function main() {
         root = visibleView();
         const afterTitleEdit = labels(root);
 
-        root.querySelector('.outline-mindmap-body-mode-button')?.click();
+        root.querySelector('.heading-mindmap-body-mode-button')?.click();
         await new Promise((resolve) => setTimeout(resolve, 700));
         const bodyEditText = '正文编辑写回 **加粗正文**\\n\\n- 正文列表验收';
-        const bodyView = app.workspace.getLeavesOfType('outline-mindmap-view')[0]?.view;
+        const bodyView = app.workspace.getLeavesOfType('heading-mindmap-view')[0]?.view;
         const bodyEditor = bodyView?.bodyEditorView;
         if (bodyEditor) {
           bodyEditor.dispatch({
@@ -474,11 +474,11 @@ async function main() {
           markdownAfterBodyEdit,
           bodyTextInModel: bodyView?.getSelectedNode?.()?.body || ''
         };
-        root.querySelector('.outline-mindmap-body-mode-button')?.click();
+        root.querySelector('.heading-mindmap-body-mode-button')?.click();
         await new Promise((resolve) => setTimeout(resolve, 700));
         root = visibleView();
-        bodyEditorWriteback.previewStrong = Boolean(root.querySelector('.outline-mindmap-body-pane strong'));
-        bodyEditorWriteback.previewList = Boolean(root.querySelector('.outline-mindmap-body-pane ul'));
+        bodyEditorWriteback.previewStrong = Boolean(root.querySelector('.heading-mindmap-body-pane strong'));
+        bodyEditorWriteback.previewList = Boolean(root.querySelector('.heading-mindmap-body-pane ul'));
 
         canvas().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
         await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -521,8 +521,8 @@ async function main() {
         await new Promise((resolve) => setTimeout(resolve, 200));
         keyboardExtended.beforeCtrlEnter = {
           selected: selected(root),
-          bodyPaneMode: app.workspace.getLeavesOfType('outline-mindmap-view')[0]?.view?.bodyPaneMode || null,
-          modeButtonCount: root.querySelectorAll('.outline-mindmap-body-mode-button').length,
+          bodyPaneMode: app.workspace.getLeavesOfType('heading-mindmap-view')[0]?.view?.bodyPaneMode || null,
+          modeButtonCount: root.querySelectorAll('.heading-mindmap-body-mode-button').length,
           sourceViewCount: root.querySelectorAll('.markdown-source-view.mod-cm6.cm-s-obsidian').length
         };
         const ctrlEnterEvent = new KeyboardEvent('keydown', {
@@ -541,7 +541,7 @@ async function main() {
           isConnected: canvas().isConnected,
           className: String(canvas().className || ''),
           activeElementClass: String(document.activeElement?.className || ''),
-          titleInputCount: root.querySelectorAll('.outline-mindmap-node-title-input').length
+          titleInputCount: root.querySelectorAll('.heading-mindmap-node-title-input').length
         };
         canvas().focus({ preventScroll: true });
         canvas().dispatchEvent(ctrlEnterEvent);
@@ -549,14 +549,14 @@ async function main() {
         const ctrlEnterFocusResult = await waitForFocusedBodySource();
         root = ctrlEnterFocusResult.root;
         keyboardExtended.canvasAfterCtrlEnter = {
-          titleInputCount: root.querySelectorAll('.outline-mindmap-node-title-input').length,
+          titleInputCount: root.querySelectorAll('.heading-mindmap-node-title-input').length,
           notices: Array.from(document.querySelectorAll('.notice')).map((notice) => notice.textContent || '')
         };
         keyboardExtended.afterCtrlEnterState = ctrlEnterFocusResult.state;
         keyboardExtended.ctrlEnterSourceView = ctrlEnterFocusResult.state.sourceView;
         keyboardExtended.ctrlEnterFocusedEditor = ctrlEnterFocusResult.state.focusedEditor;
         keyboardExtended.ctrlEnterCmFocused = ctrlEnterFocusResult.state.cmFocused;
-        root.querySelector('.outline-mindmap-body-mode-button')?.click();
+        root.querySelector('.heading-mindmap-body-mode-button')?.click();
         await new Promise((resolve) => setTimeout(resolve, 700));
         root = visibleView();
 
@@ -585,10 +585,10 @@ async function main() {
           after: { left: canvas().scrollLeft, top: canvas().scrollTop }
         };
 
-        await app.workspace.getLeavesOfType('outline-mindmap-view')[0].detach();
+        await app.workspace.getLeavesOfType('heading-mindmap-view')[0].detach();
         await new Promise((resolve) => setTimeout(resolve, 500));
         await app.workspace.getLeaf(false).openFile(product);
-        await app.commands.executeCommandById('outline-mindmap:open-outline-mindmap');
+        await app.commands.executeCommandById('heading-mindmap:open');
         await new Promise((resolve) => setTimeout(resolve, 1200));
         root = visibleView();
         report.reopenState = {
@@ -603,7 +603,7 @@ async function main() {
     `, 90000);
 
     assert(!report.setupFailure, "打开导图后没有找到可见导图视图", report.setupFailure);
-    assert(report.open.activeType === "outline-mindmap-view", "导图视图没有成为 active view", report.open);
+    assert(report.open.activeType === "heading-mindmap-view", "导图视图没有成为 active view", report.open);
     assert(report.open.leaves === 1, "打开后导图 leaf 数量不正确", report.open);
     assert(report.open.markdownLeaves >= 1, "打开导图后没有保留普通 Markdown 视图", report.open);
     assert(report.open.labels.length >= 5, "标题层级未正确渲染到导图", report.open.labels);
@@ -656,7 +656,7 @@ async function main() {
     assert(report.reopenState.scrollLeft === report.scrollStability.before.left, "关闭重开后水平视野状态未保留", report.reopenState);
     assert(report.reopenState.scrollTop === report.scrollStability.before.top, "关闭重开后垂直视野状态未保留", report.reopenState);
     assert(report.reopenState.labels.some((label) => label.includes("目标更新")), "关闭重开后导图未恢复最新 Markdown", report.reopenState);
-    assert(report.reopenState.activeType === "outline-mindmap-view", "关闭重开后未回到导图视图", report.reopenState);
+    assert(report.reopenState.activeType === "heading-mindmap-view", "关闭重开后未回到导图视图", report.reopenState);
 
     nodeReplWrite(JSON.stringify({ root, vault, report }, null, 2));
   } finally {

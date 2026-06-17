@@ -13,7 +13,7 @@ describe("body pane Obsidian classes", () => {
     expect(BODY_READING_VIEW_CLASSES).not.toContain("markdown-rendered");
     expect(BODY_PREVIEW_CONTENT_CLASSES).toContain("markdown-preview-view");
     expect(BODY_PREVIEW_CONTENT_CLASSES).toContain("markdown-rendered");
-    expect(BODY_PREVIEW_CONTENT_CLASSES).not.toContain("outline-mindmap-body-preview-content");
+    expect(BODY_PREVIEW_CONTENT_CLASSES).not.toContain("heading-mindmap-body-preview-content");
   });
 
   it("编辑视图使用 Obsidian Markdown 源码编辑容器和 CodeMirror 主题类", () => {

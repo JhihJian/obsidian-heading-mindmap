@@ -1,22 +1,22 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const mainSource = readFileSync("src/main.ts", "utf8");
+const viewSource = readFileSync("src/mindmap-view.ts", "utf8");
 
 function getMethodBody(methodName: string): string {
-  const start = mainSource.search(new RegExp(`^\\s*(?:private\\s+)?(?:async\\s+)?${methodName}\\b`, "m"));
+  const start = viewSource.search(new RegExp(`^\\s*(?:private\\s+)?(?:async\\s+)?${methodName}\\b`, "m"));
   if (start < 0) throw new Error(`找不到方法：${methodName}`);
 
-  const signatureEnd = mainSource.indexOf("):", start);
-  const braceStart = mainSource.indexOf("{", signatureEnd);
+  const signatureEnd = viewSource.indexOf("):", start);
+  const braceStart = viewSource.indexOf("{", signatureEnd);
   if (braceStart < 0) throw new Error(`找不到方法体：${methodName}`);
 
   let depth = 0;
-  for (let index = braceStart; index < mainSource.length; index += 1) {
-    const char = mainSource[index];
+  for (let index = braceStart; index < viewSource.length; index += 1) {
+    const char = viewSource[index];
     if (char === "{") depth += 1;
     if (char === "}") depth -= 1;
-    if (depth === 0) return mainSource.slice(braceStart + 1, index);
+    if (depth === 0) return viewSource.slice(braceStart + 1, index);
   }
 
   throw new Error(`方法体未闭合：${methodName}`);
@@ -47,7 +47,7 @@ describe("view source contract", () => {
     const loadFromState = getMethodBody("loadFromState");
     const onOpen = getMethodBody("onOpen");
 
-    expect(mainSource).toContain("decideMindmapStateLoadPolicy");
+    expect(viewSource).toContain("decideMindmapStateLoadPolicy");
     expect(loadFromState).toContain("policy === \"await-state\"");
     expect(loadFromState).toContain("policy === \"activate-default\"");
     expect(loadFromState).not.toContain("if (!this.filePath)");

@@ -1,10 +1,10 @@
 {
-  "id": "outline-mindmap",
-  "name": "Outline Mindmap",
+  "id": "heading-mindmap",
+  "name": "Heading Mindmap",
   "version": "0.1.0",
-  "minAppVersion": "1.5.0",
-  "description": "把 Markdown 标题结构作为可编辑思维导图打开，并在下方面板编辑正文。",
-  "author": "",
-  "authorUrl": "",
+  "minAppVersion": "1.8.7",
+  "description": "Open Markdown headings as editable mind maps and edit section content in a bottom pane.",
+  "author": "JhihJian",
+  "authorUrl": "https://github.com/JhihJian",
   "isDesktopOnly": false
 }

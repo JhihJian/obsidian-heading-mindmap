@@ -40,7 +40,10 @@ export type ParseMindmapOptions = {
   expandListItems?: boolean;
 };
 
-const COLLAPSED_COMMENT = "<!-- outline-mindmap: collapsed=true -->";
+const COLLAPSED_COMMENTS = new Set([
+  "<!-- heading-mindmap: collapsed=true -->",
+  "<!-- outline-mindmap: collapsed=true -->"
+]);
 
 export function createStarterMindmap(): MindNode {
   return {
@@ -414,7 +417,7 @@ function parseSectionBody(body: string): Pick<MarkdownSection, "body" | "bodyCol
   let bodyCollapsed = false;
 
   for (const line of lines) {
-    if (line.trim() === COLLAPSED_COMMENT) {
+    if (COLLAPSED_COMMENTS.has(line.trim())) {
       bodyCollapsed = true;
       continue;
     }
