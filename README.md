@@ -1,5 +1,40 @@
 # Heading Mindmap
 
+Heading Mindmap is an Obsidian plugin that opens Markdown heading structures as editable mind maps.
+
+It keeps Markdown as the source of truth. The mind map shows the heading tree at the top, while the bottom pane lets you read or edit the selected section body. Title, body, and structure changes are written back to the original Markdown file.
+
+## Features
+
+- Open a Markdown note as a dedicated mind map view.
+- Edit heading titles inline in the mind map.
+- Edit the selected heading body in a bottom pane.
+- Render body content with Obsidian Markdown preview styling.
+- Add, delete, promote, and reorder nodes with keyboard shortcuts.
+- Add Markdown file nodes and expand target file headings as read-only outlines.
+- Optionally show Markdown list items from the current body as read-only virtual child nodes.
+- Preserve collapsed nodes, expanded file nodes, selection, scroll, and zoom state.
+
+## Usage
+
+Enable `Heading Mindmap` in Obsidian settings, then run the command `Open mind map`.
+
+The command opens the current Markdown file as a mind map. If the current tab is already a mind map for the same file, the existing view is reused; otherwise a new tab is opened so the normal Markdown source view can stay available.
+
+Keyboard shortcuts:
+
+- `Tab`: add child node.
+- `Shift+Enter`: add sibling node.
+- `Enter`: edit selected node title.
+- `Ctrl+Enter`: focus the body editor.
+- `Shift+Tab`: promote selected node.
+- `Alt+Up` / `Alt+Down`: reorder sibling nodes.
+- `Space`: collapse or expand the selected subtree.
+- `Delete`: delete the selected node.
+- Arrow keys: move selection.
+
+## 中文说明
+
 Heading Mindmap 是一个 Obsidian 思维导图插件，让 Markdown 笔记可以用“可编辑思维导图”方式打开。
 
 导图是笔记内容的结构化视图。标题层级决定节点层级；上方导图只显示标题树，下方正文区域以阅读/编辑模式查看和编辑当前节点正文，结果写回原 Markdown 文件。
