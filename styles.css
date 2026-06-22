@@ -60,16 +60,47 @@
 }
 
 .heading-mindmap-split {
+  --mindmap-body-pane-height: 55%;
+  --mindmap-body-resizer-height: 8px;
   display: grid;
   flex: 1;
-  grid-template-rows: minmax(220px, 45%) minmax(320px, 55%);
+  grid-template-rows: minmax(180px, 1fr) var(--mindmap-body-resizer-height) minmax(180px, var(--mindmap-body-pane-height));
   min-height: 0;
 }
 
+.heading-mindmap-split.is-resizing {
+  user-select: none;
+}
+
 .heading-mindmap-canvas {
-  border-bottom: 1px solid var(--background-modifier-border);
   overflow: auto;
   position: relative;
+}
+
+.heading-mindmap-body-resizer {
+  align-items: center;
+  background: var(--background-primary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-top: 1px solid var(--background-modifier-border);
+  cursor: row-resize;
+  display: flex;
+  justify-content: center;
+  min-height: var(--mindmap-body-resizer-height);
+  touch-action: none;
+}
+
+.heading-mindmap-body-resizer::before {
+  background: var(--background-modifier-border-hover);
+  border-radius: 999px;
+  content: "";
+  height: 2px;
+  width: 48px;
+}
+
+.heading-mindmap-body-resizer:hover,
+.heading-mindmap-body-resizer:focus-visible,
+.heading-mindmap-body-resizer.is-dragging {
+  background: var(--background-secondary);
 }
 
 .heading-mindmap-scroll-area {

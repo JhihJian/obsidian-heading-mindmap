@@ -6,7 +6,9 @@ import {
   getStoredViewportState,
   getNodeKey,
   getNodeIdByKey,
+  normalizeBodyPaneSize,
   normalizeViewportState,
+  resolveInitialBodyPaneSize,
   resolveInitialViewportState
 } from "../src/mindmap-view-state";
 
@@ -63,6 +65,17 @@ describe("mindmap view state", () => {
     });
   });
 
+  it("保存并规范化正文区域高度，用于重新打开后恢复拖拽结果", () => {
+    const root = parseMindmapMarkdown("projects/map.md", "# 产品");
+    const stored = collectStoredMindmapState(root, undefined, {
+      heightRatio: 0.9
+    });
+
+    expect(stored.bodyPane).toEqual({
+      heightRatio: 0.8
+    });
+  });
+
   it("保存真实标题状态时忽略列表项虚拟节点，避免开关列表项后状态错位", () => {
     const root = parseMindmapMarkdown(
       "projects/map.md",
@@ -97,6 +110,21 @@ describe("mindmap view state", () => {
     });
   });
 
+  it("规范化正文区域高度，限制可拖拽边界", () => {
+    expect(normalizeBodyPaneSize({ heightRatio: 0.1 })).toEqual({
+      heightRatio: 0.25
+    });
+    expect(normalizeBodyPaneSize({ heightRatio: 0.9 })).toEqual({
+      heightRatio: 0.8
+    });
+    expect(normalizeBodyPaneSize({ heightRatio: Number.NaN })).toEqual({
+      heightRatio: 0.25
+    });
+    expect(normalizeBodyPaneSize(undefined)).toEqual({
+      heightRatio: 0.55
+    });
+  });
+
   it("初始化视野时优先使用 leaf 自身状态，否则使用文件级默认视野", () => {
     const stored = {
       collapsedNodeKeys: [],
@@ -113,6 +141,33 @@ describe("mindmap view state", () => {
       scale: 0.8,
       scrollLeft: 10,
       scrollTop: 20
+    });
+  });
+
+  it("初始化正文区域高度时优先使用 leaf 自身状态，否则使用文件级默认高度", () => {
+    const stored = {
+      collapsedNodeKeys: [],
+      expandedFileNodeKeys: [],
+      bodyPane: { heightRatio: 0.7 }
+    };
+
+    expect(resolveInitialBodyPaneSize(undefined, stored)).toEqual({
+      heightRatio: 0.7
+    });
+    expect(resolveInitialBodyPaneSize({ heightRatio: 0.4 }, stored)).toEqual({
+      heightRatio: 0.4
+    });
+  });
+
+  it("新打开 leaf 的空正文区域状态不覆盖文件级默认高度", () => {
+    const stored = {
+      collapsedNodeKeys: [],
+      expandedFileNodeKeys: [],
+      bodyPane: { heightRatio: 0.7 }
+    };
+
+    expect(resolveInitialBodyPaneSize({}, stored)).toEqual({
+      heightRatio: 0.7
     });
   });
 

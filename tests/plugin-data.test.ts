@@ -16,7 +16,8 @@ describe("plugin data", () => {
         "notes/map.md": {
           collapsedNodeKeys: ["root[0]", 1, null],
           expandedFileNodeKeys: ["root[0]/file[0]", false],
-          viewport: { scale: 3, scrollLeft: -4, scrollTop: 24 }
+          viewport: { scale: 3, scrollLeft: -4, scrollTop: 24 },
+          bodyPane: { heightRatio: 0.9 }
         },
         "": {
           collapsedNodeKeys: ["ignored"]
@@ -31,7 +32,8 @@ describe("plugin data", () => {
         "notes/map.md": {
           collapsedNodeKeys: ["root[0]"],
           expandedFileNodeKeys: ["root[0]/file[0]"],
-          viewport: { scale: 2, scrollLeft: 0, scrollTop: 24 }
+          viewport: { scale: 2, scrollLeft: 0, scrollTop: 24 },
+          bodyPane: { heightRatio: 0.8 }
         }
       }
     });

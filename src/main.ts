@@ -12,6 +12,7 @@ import {
 import {
   applyStoredMindmapState,
   collectStoredMindmapState,
+  type BodyPaneSizeState,
   type MindmapViewportState,
   type StoredMindmapState
 } from "./mindmap-view-state";
@@ -113,9 +114,10 @@ export default class HeadingMindmapPlugin extends Plugin {
   async saveMindmapState(
     filePath: string,
     root: MindNode,
-    viewport?: Partial<MindmapViewportState>
+    viewport?: Partial<MindmapViewportState>,
+    bodyPane?: Partial<BodyPaneSizeState>
   ): Promise<void> {
-    this.data.files[filePath] = collectStoredMindmapState(root, viewport);
+    this.data.files[filePath] = collectStoredMindmapState(root, viewport, bodyPane);
     await this.saveData(this.data);
   }
 

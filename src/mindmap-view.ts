@@ -63,8 +63,11 @@ import {
 import {
   getNodeIdByKey,
   getNodeKey,
+  normalizeBodyPaneSize,
   normalizeViewportState,
+  resolveInitialBodyPaneSize,
   resolveInitialViewportState,
+  type BodyPaneSizeState,
   type MindmapViewportState
 } from "./mindmap-view-state";
 import { VIEW_TYPE_MINDMAP, type MindmapViewState } from "./mindmap-view-config";
@@ -82,6 +85,7 @@ export class HeadingMindmapView extends ItemView {
   private root: MindNode = createStarterMindmap();
   private currentFile: TFile | null = null;
   private selectedNodeId: string;
+  private splitEl?: HTMLElement;
   private canvasEl?: HTMLElement;
   private surfaceEl?: HTMLElement;
   private previewEl?: HTMLElement;
@@ -91,6 +95,7 @@ export class HeadingMindmapView extends ItemView {
   private titleEditingNodeId: string | null = null;
   private filePath?: string;
   private viewport: MindmapViewportState = normalizeViewportState(undefined);
+  private bodyPane: BodyPaneSizeState = normalizeBodyPaneSize(undefined);
   private selectedNodeKey?: string;
   private pendingBodyEdits = new Map<string, PendingBodyEdit>();
   private saveStateTimer: number | null = null;
@@ -140,7 +145,8 @@ export class HeadingMindmapView extends ItemView {
     return {
       filePath: this.filePath,
       selectedNodeKey: getNodeKey(this.root, this.selectedNodeId) ?? this.selectedNodeKey,
-      viewport: this.readViewportFromDom()
+      viewport: this.readViewportFromDom(),
+      bodyPane: this.readBodyPaneSize()
     } satisfies MindmapViewState;
   }
 
@@ -150,6 +156,7 @@ export class HeadingMindmapView extends ItemView {
     this.hasLeafState = true;
     this.filePath = state.filePath;
     this.viewport = normalizeViewportState(state.viewport);
+    this.bodyPane = normalizeBodyPaneSize(state.bodyPane);
     this.selectedNodeKey = state.selectedNodeKey;
     await this.loadFromState();
   }
@@ -183,7 +190,7 @@ export class HeadingMindmapView extends ItemView {
   async reloadFromDisk(): Promise<void> {
     const viewport = this.readViewportFromDom();
     if (this.filePath) {
-      await this.plugin.saveMindmapState(this.filePath, this.root, viewport);
+      await this.plugin.saveMindmapState(this.filePath, this.root, viewport, this.readBodyPaneSize());
     }
     this.viewport = viewport;
     await this.loadFromState({ preserveSelection: true, viewport });
@@ -220,10 +227,9 @@ export class HeadingMindmapView extends ItemView {
       applyListItemExpansion(this.root, { expandListItems: true });
     }
     this.currentFile = file;
-    this.viewport = resolveInitialViewportState(
-      options.viewport ?? state.viewport,
-      this.plugin.getStoredMindmapState(filePath)
-    );
+    const storedState = this.plugin.getStoredMindmapState(filePath);
+    this.viewport = resolveInitialViewportState(options.viewport ?? state.viewport, storedState);
+    this.bodyPane = resolveInitialBodyPaneSize(state.bodyPane, storedState);
     const selectedFromState = getNodeIdByKey(this.root, this.selectedNodeKey);
     this.setSelectedNode(
       getSelectionAfterReload(
@@ -251,6 +257,8 @@ export class HeadingMindmapView extends ItemView {
     this.createToolbar(toolbar);
 
     const split = container.createDiv({ cls: "heading-mindmap-split" });
+    this.splitEl = split;
+    this.applyBodyPaneSizeToSplit(split);
 
     this.canvasEl = split.createDiv({ cls: "heading-mindmap-canvas" });
     this.canvasEl.tabIndex = 0;
@@ -266,6 +274,7 @@ export class HeadingMindmapView extends ItemView {
     };
     this.renderCanvas(this.canvasEl);
 
+    this.renderBodyPaneResizer(split);
     this.renderBodyPane(split);
   }
 
@@ -639,6 +648,10 @@ export class HeadingMindmapView extends ItemView {
     });
   }
 
+  private readBodyPaneSize(): BodyPaneSizeState {
+    return normalizeBodyPaneSize(this.bodyPane);
+  }
+
   private scheduleUiStateSave(): void {
     if (this.saveStateTimer !== null) {
       window.clearTimeout(this.saveStateTimer);
@@ -652,9 +665,10 @@ export class HeadingMindmapView extends ItemView {
   private async saveUiState(viewport = this.readViewportFromDom()): Promise<void> {
     if (!this.filePath) return;
     this.viewport = viewport;
+    this.bodyPane = this.readBodyPaneSize();
     this.selectedNodeKey = getNodeKey(this.root, this.selectedNodeId) ?? undefined;
     this.plugin.app.workspace.requestSaveLayout();
-    await this.plugin.saveMindmapState(this.filePath, this.root, this.viewport);
+    await this.plugin.saveMindmapState(this.filePath, this.root, this.viewport, this.bodyPane);
   }
 
   private startTitleEdit(): void {
@@ -707,6 +721,100 @@ export class HeadingMindmapView extends ItemView {
     } else {
       this.renderBodyPreview(pane, node);
     }
+  }
+
+  private renderBodyPaneResizer(container: HTMLElement): void {
+    const resizer = container.createDiv({ cls: "heading-mindmap-body-resizer" });
+    resizer.tabIndex = 0;
+    resizer.setAttr("role", "separator");
+    resizer.setAttr("aria-orientation", "horizontal");
+    resizer.setAttr("aria-label", "调整正文区域高度");
+    setTooltip(resizer, "拖拽调整正文区域高度");
+    this.updateBodyPaneResizerAria(resizer);
+
+    resizer.onpointerdown = (event) => {
+      this.startBodyPaneResize(event, container, resizer);
+    };
+    resizer.onkeydown = (event) => {
+      this.handleBodyPaneResizeKeydown(event, container, resizer);
+    };
+  }
+
+  private startBodyPaneResize(event: PointerEvent, split: HTMLElement, resizer: HTMLElement): void {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const pointerId = event.pointerId;
+    split.addClass("is-resizing");
+    resizer.addClass("is-dragging");
+    resizer.setPointerCapture(pointerId);
+    this.setBodyPaneHeightFromPointer(event.clientY, split, resizer);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      moveEvent.preventDefault();
+      this.setBodyPaneHeightFromPointer(moveEvent.clientY, split, resizer);
+    };
+    const finishResize = (finishEvent: PointerEvent) => {
+      if (finishEvent.pointerId !== pointerId) return;
+      resizer.removeEventListener("pointermove", handlePointerMove);
+      resizer.removeEventListener("pointerup", finishResize);
+      resizer.removeEventListener("pointercancel", finishResize);
+      split.removeClass("is-resizing");
+      resizer.removeClass("is-dragging");
+      if (resizer.hasPointerCapture(pointerId)) {
+        resizer.releasePointerCapture(pointerId);
+      }
+      void this.saveUiState();
+    };
+
+    resizer.addEventListener("pointermove", handlePointerMove);
+    resizer.addEventListener("pointerup", finishResize);
+    resizer.addEventListener("pointercancel", finishResize);
+  }
+
+  private setBodyPaneHeightFromPointer(clientY: number, split: HTMLElement, resizer: HTMLElement): void {
+    const splitRect = split.getBoundingClientRect();
+    if (splitRect.height <= 0) return;
+    const resizerHeight = resizer.getBoundingClientRect().height;
+    const bodyHeight = splitRect.bottom - clientY - resizerHeight / 2;
+    this.setBodyPaneHeightRatio(bodyHeight / splitRect.height, split, resizer);
+  }
+
+  private handleBodyPaneResizeKeydown(event: KeyboardEvent, split: HTMLElement, resizer: HTMLElement): void {
+    const step = event.shiftKey ? 0.1 : 0.05;
+    let nextRatio: number | null = null;
+
+    if (event.key === "ArrowUp") nextRatio = this.bodyPane.heightRatio + step;
+    if (event.key === "ArrowDown") nextRatio = this.bodyPane.heightRatio - step;
+    if (event.key === "PageUp") nextRatio = this.bodyPane.heightRatio + 0.1;
+    if (event.key === "PageDown") nextRatio = this.bodyPane.heightRatio - 0.1;
+    if (event.key === "Home") nextRatio = 0.25;
+    if (event.key === "End") nextRatio = 0.8;
+
+    if (nextRatio === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.setBodyPaneHeightRatio(nextRatio, split, resizer);
+    this.scheduleUiStateSave();
+  }
+
+  private setBodyPaneHeightRatio(ratio: number, split = this.splitEl, resizer?: HTMLElement): void {
+    this.bodyPane = normalizeBodyPaneSize({ heightRatio: ratio });
+    this.applyBodyPaneSizeToSplit(split);
+    this.updateBodyPaneResizerAria(resizer ?? split?.querySelector<HTMLElement>(".heading-mindmap-body-resizer"));
+  }
+
+  private applyBodyPaneSizeToSplit(split = this.splitEl): void {
+    split?.style.setProperty("--mindmap-body-pane-height", `${(this.bodyPane.heightRatio * 100).toFixed(2)}%`);
+  }
+
+  private updateBodyPaneResizerAria(resizer: HTMLElement | null | undefined): void {
+    if (!resizer) return;
+    const percent = Math.round(this.bodyPane.heightRatio * 100);
+    resizer.setAttr("aria-valuemin", "25");
+    resizer.setAttr("aria-valuemax", "80");
+    resizer.setAttr("aria-valuenow", String(percent));
+    resizer.setAttr("aria-valuetext", `正文区域高度 ${percent}%`);
   }
 
   private getNodeBodyMeta(node: MindNode): string {

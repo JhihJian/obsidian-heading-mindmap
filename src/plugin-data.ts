@@ -1,4 +1,4 @@
-import { getStoredViewportState, type StoredMindmapState } from "./mindmap-view-state";
+import { getStoredBodyPaneSize, getStoredViewportState, type StoredMindmapState } from "./mindmap-view-state";
 
 export type HeadingMindmapPluginData = {
   files: Record<string, StoredMindmapState>;
@@ -36,7 +36,8 @@ export function normalizePluginData(value: unknown): HeadingMindmapPluginData {
                   (key): key is string => typeof key === "string"
                 )
               : [],
-            viewport: getStoredViewportState(state)
+            viewport: getStoredViewportState(state),
+            bodyPane: getStoredBodyPaneSize(state)
           }
         ])
     )
