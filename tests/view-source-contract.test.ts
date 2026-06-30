@@ -38,9 +38,22 @@ describe("view source contract", () => {
     const createToolbar = getMethodBody("createToolbar");
 
     expect(renderBodyPane).toContain("new ButtonComponent(actions)");
+    expect(renderBodyPane).toContain("setBodyPaneMinimized");
     expect(renderBodyPane).toContain("toggleBodyPaneMode");
     expect(createToolbar).toContain("new ButtonComponent(actions)");
     expect(createToolbar).toContain("openFilePicker");
+  });
+
+  it("正文区最小化时隐藏正文内容和拖拽条，并通过正文状态恢复", () => {
+    const renderBodyPane = getMethodBody("renderBodyPane");
+    const renderBodyPaneResizer = getMethodBody("renderBodyPaneResizer");
+    const focusBodyEditor = getMethodBody("focusBodyEditor");
+
+    expect(renderBodyPane).toContain("this.bodyPane.minimized");
+    expect(renderBodyPane).toContain("is-minimized");
+    expect(renderBodyPane).toContain("if (minimized) return");
+    expect(renderBodyPaneResizer).toContain("if (this.bodyPane.minimized) return");
+    expect(focusBodyEditor).toContain("setBodyPaneMinimized(false, { focusEditor: true })");
   });
 
   it("视图打开时区分等待 leaf state 和激活默认导图，避免空 state 重复打开视图", () => {

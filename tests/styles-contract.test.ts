@@ -13,11 +13,14 @@ function getRule(selector: string): string {
 describe("styles contract", () => {
   it("上下分屏中正文区域高度由可拖拽变量控制，并保留可读可编辑下限", () => {
     const splitRule = getRule(".heading-mindmap-split");
+    const minimizedSplitRule = getRule(".heading-mindmap-split.is-body-pane-minimized");
 
     expect(splitRule).toContain("--mindmap-body-pane-height: 55%");
+    expect(splitRule).toContain("--mindmap-body-pane-minimized-height: 44px");
     expect(splitRule).toContain("grid-template-rows:");
     expect(splitRule).toContain("var(--mindmap-body-resizer-height)");
     expect(splitRule).toContain("var(--mindmap-body-pane-height)");
+    expect(minimizedSplitRule).toContain("var(--mindmap-body-pane-minimized-height)");
     expect(css).toContain(".heading-mindmap-body-resizer");
     expect(css).toContain("cursor: row-resize");
   });

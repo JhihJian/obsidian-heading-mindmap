@@ -8,6 +8,7 @@ export type MindmapViewportState = {
 
 export type BodyPaneSizeState = {
   heightRatio: number;
+  minimized: boolean;
 };
 
 export type StoredMindmapState = {
@@ -37,7 +38,8 @@ export function normalizeBodyPaneSize(value: Partial<BodyPaneSizeState> | undefi
       value?.heightRatio ?? DEFAULT_BODY_PANE_HEIGHT_RATIO,
       MIN_BODY_PANE_HEIGHT_RATIO,
       MAX_BODY_PANE_HEIGHT_RATIO
-    )
+    ),
+    minimized: Boolean(value?.minimized)
   };
 }
 
@@ -157,7 +159,7 @@ function hasViewportValue(value: Partial<MindmapViewportState> | undefined): boo
 }
 
 function hasBodyPaneSizeValue(value: Partial<BodyPaneSizeState> | undefined): boolean {
-  return value?.heightRatio !== undefined;
+  return value?.heightRatio !== undefined || value?.minimized !== undefined;
 }
 
 function clampFinite(value: number, min: number, max: number): number {

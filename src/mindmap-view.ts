@@ -697,15 +697,32 @@ export class HeadingMindmapView extends ItemView {
     const node = this.getSelectedNode();
     const readonly = isReadonlyOutlineNode(this.root, node.id);
     this.bodyPaneMode = normalizeBodyPaneMode(this.bodyPaneMode, readonly);
+    const minimized = this.bodyPane.minimized;
 
-    const pane = container.createDiv({ cls: "heading-mindmap-body-pane" });
+    if (minimized) {
+      this.destroyBodyEditor();
+      this.previewEl = undefined;
+    }
+
+    const pane = container.createDiv({
+      cls: `heading-mindmap-body-pane${minimized ? " is-minimized" : ""}`
+    });
     const header = pane.createDiv({ cls: "heading-mindmap-body-header" });
     const heading = header.createDiv({ cls: "heading-mindmap-body-heading" });
     heading.createDiv({ text: node.title, cls: "heading-mindmap-body-title" });
     heading.createDiv({ text: this.getNodeBodyMeta(node), cls: "heading-mindmap-body-meta" });
 
     const actions = header.createDiv({ cls: "heading-mindmap-body-actions" });
-    if (!readonly) {
+    const minimizeButton = new ButtonComponent(actions)
+      .setIcon(minimized ? "panel-bottom-open" : "panel-bottom-close")
+      .setTooltip(minimized ? "展开正文区域" : "最小化正文区域")
+      .onClick(() => {
+        minimizeButton.buttonEl.blur();
+        void this.setBodyPaneMinimized(!this.bodyPane.minimized);
+      });
+    minimizeButton.buttonEl.addClass("heading-mindmap-body-minimize-button");
+
+    if (!readonly && !minimized) {
       const modeButton = new ButtonComponent(actions)
         .setIcon(this.bodyPaneMode === "preview" ? "pencil" : "book-open")
         .setTooltip(this.bodyPaneMode === "preview" ? "切换到编辑视图" : "切换到阅读视图")
@@ -716,6 +733,8 @@ export class HeadingMindmapView extends ItemView {
       modeButton.buttonEl.addClass("heading-mindmap-body-mode-button");
     }
 
+    if (minimized) return;
+
     if (this.bodyPaneMode === "source" && !readonly) {
       this.renderBodySource(pane, node);
     } else {
@@ -724,6 +743,7 @@ export class HeadingMindmapView extends ItemView {
   }
 
   private renderBodyPaneResizer(container: HTMLElement): void {
+    if (this.bodyPane.minimized) return;
     const resizer = container.createDiv({ cls: "heading-mindmap-body-resizer" });
     resizer.tabIndex = 0;
     resizer.setAttr("role", "separator");
@@ -799,13 +819,19 @@ export class HeadingMindmapView extends ItemView {
   }
 
   private setBodyPaneHeightRatio(ratio: number, split = this.splitEl, resizer?: HTMLElement): void {
-    this.bodyPane = normalizeBodyPaneSize({ heightRatio: ratio });
+    this.bodyPane = normalizeBodyPaneSize({ ...this.bodyPane, heightRatio: ratio, minimized: false });
     this.applyBodyPaneSizeToSplit(split);
     this.updateBodyPaneResizerAria(resizer ?? split?.querySelector<HTMLElement>(".heading-mindmap-body-resizer"));
   }
 
   private applyBodyPaneSizeToSplit(split = this.splitEl): void {
-    split?.style.setProperty("--mindmap-body-pane-height", `${(this.bodyPane.heightRatio * 100).toFixed(2)}%`);
+    if (!split) return;
+    split.style.setProperty("--mindmap-body-pane-height", `${(this.bodyPane.heightRatio * 100).toFixed(2)}%`);
+    if (this.bodyPane.minimized) {
+      split.addClass("is-body-pane-minimized");
+    } else {
+      split.removeClass("is-body-pane-minimized");
+    }
   }
 
   private updateBodyPaneResizerAria(resizer: HTMLElement | null | undefined): void {
@@ -827,6 +853,10 @@ export class HeadingMindmapView extends ItemView {
   private focusBodyEditor(): void {
     if (isReadonlyOutlineNode(this.root, this.selectedNodeId)) {
       new Notice(READONLY_OUTLINE_MESSAGE);
+      return;
+    }
+    if (this.bodyPane.minimized) {
+      void this.setBodyPaneMinimized(false, { focusEditor: true });
       return;
     }
     if (this.bodyPaneMode !== "source") {
@@ -978,6 +1008,21 @@ export class HeadingMindmapView extends ItemView {
     window.setTimeout(() => this.focusCanvas(), 0);
   }
 
+  private async setBodyPaneMinimized(minimized: boolean, options: { focusEditor?: boolean } = {}): Promise<void> {
+    if (this.bodyPane.minimized === minimized) return;
+
+    const viewport = this.readViewportFromDom();
+    if (minimized && this.bodyEditorView) {
+      await this.saveBodyAfterEditing();
+    }
+    this.bodyPane = normalizeBodyPaneSize({ ...this.bodyPane, minimized });
+    await this.saveUiState(viewport);
+    this.renderPreservingViewport({ viewport, focusCanvas: !options.focusEditor });
+    if (options.focusEditor) {
+      void this.setBodyPaneMode("source", { focusEditor: true });
+    }
+  }
+
   private focusBodyEditorView(): void {
     const editor = this.bodyEditorView;
     if (!editor) return;
@@ -1007,6 +1052,7 @@ export class HeadingMindmapView extends ItemView {
     if (!split || !oldPane) return;
     this.destroyBodyEditor();
     oldPane.remove();
+    this.applyBodyPaneSizeToSplit(split);
     this.renderBodyPane(split);
   }
 

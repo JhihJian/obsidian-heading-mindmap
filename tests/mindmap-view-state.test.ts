@@ -68,11 +68,13 @@ describe("mindmap view state", () => {
   it("保存并规范化正文区域高度，用于重新打开后恢复拖拽结果", () => {
     const root = parseMindmapMarkdown("projects/map.md", "# 产品");
     const stored = collectStoredMindmapState(root, undefined, {
-      heightRatio: 0.9
+      heightRatio: 0.9,
+      minimized: true
     });
 
     expect(stored.bodyPane).toEqual({
-      heightRatio: 0.8
+      heightRatio: 0.8,
+      minimized: true
     });
   });
 
@@ -112,16 +114,24 @@ describe("mindmap view state", () => {
 
   it("规范化正文区域高度，限制可拖拽边界", () => {
     expect(normalizeBodyPaneSize({ heightRatio: 0.1 })).toEqual({
-      heightRatio: 0.25
+      heightRatio: 0.25,
+      minimized: false
     });
     expect(normalizeBodyPaneSize({ heightRatio: 0.9 })).toEqual({
-      heightRatio: 0.8
+      heightRatio: 0.8,
+      minimized: false
     });
     expect(normalizeBodyPaneSize({ heightRatio: Number.NaN })).toEqual({
-      heightRatio: 0.25
+      heightRatio: 0.25,
+      minimized: false
     });
     expect(normalizeBodyPaneSize(undefined)).toEqual({
-      heightRatio: 0.55
+      heightRatio: 0.55,
+      minimized: false
+    });
+    expect(normalizeBodyPaneSize({ minimized: true })).toEqual({
+      heightRatio: 0.55,
+      minimized: true
     });
   });
 
@@ -148,14 +158,16 @@ describe("mindmap view state", () => {
     const stored = {
       collapsedNodeKeys: [],
       expandedFileNodeKeys: [],
-      bodyPane: { heightRatio: 0.7 }
+      bodyPane: { heightRatio: 0.7, minimized: true }
     };
 
     expect(resolveInitialBodyPaneSize(undefined, stored)).toEqual({
-      heightRatio: 0.7
+      heightRatio: 0.7,
+      minimized: true
     });
-    expect(resolveInitialBodyPaneSize({ heightRatio: 0.4 }, stored)).toEqual({
-      heightRatio: 0.4
+    expect(resolveInitialBodyPaneSize({ heightRatio: 0.4, minimized: false }, stored)).toEqual({
+      heightRatio: 0.4,
+      minimized: false
     });
   });
 
@@ -163,11 +175,25 @@ describe("mindmap view state", () => {
     const stored = {
       collapsedNodeKeys: [],
       expandedFileNodeKeys: [],
-      bodyPane: { heightRatio: 0.7 }
+      bodyPane: { heightRatio: 0.7, minimized: true }
     };
 
     expect(resolveInitialBodyPaneSize({}, stored)).toEqual({
-      heightRatio: 0.7
+      heightRatio: 0.7,
+      minimized: true
+    });
+  });
+
+  it("新打开 leaf 的正文最小化状态可以独立覆盖文件级默认状态", () => {
+    const stored = {
+      collapsedNodeKeys: [],
+      expandedFileNodeKeys: [],
+      bodyPane: { heightRatio: 0.7, minimized: false }
+    };
+
+    expect(resolveInitialBodyPaneSize({ minimized: true }, stored)).toEqual({
+      heightRatio: 0.55,
+      minimized: true
     });
   });
 

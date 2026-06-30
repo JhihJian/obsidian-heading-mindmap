@@ -348,6 +348,57 @@ async function main() {
         };
         root.querySelector('.heading-mindmap-body-mode-button')?.click();
         await new Promise((resolve) => setTimeout(resolve, 700));
+        root = visibleView();
+
+        const minimizeButton = root.querySelector('.heading-mindmap-body-minimize-button');
+        const beforeMinimize = {
+          canvasHeight: Math.round(canvas().getBoundingClientRect().height),
+          bodyHeight: Math.round(root.querySelector('.heading-mindmap-body-pane')?.getBoundingClientRect().height || 0),
+          previewCount: root.querySelectorAll('.heading-mindmap-body-preview.markdown-reading-view').length,
+          modeButtonCount: root.querySelectorAll('.heading-mindmap-body-mode-button').length,
+          resizerCount: root.querySelectorAll('.heading-mindmap-body-resizer').length
+        };
+        minimizeButton?.click();
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        root = visibleView();
+        const afterMinimize = {
+          splitMinimized: root.querySelector('.heading-mindmap-split')?.classList.contains('is-body-pane-minimized') || false,
+          paneMinimized: root.querySelector('.heading-mindmap-body-pane')?.classList.contains('is-minimized') || false,
+          canvasHeight: Math.round(canvas().getBoundingClientRect().height),
+          bodyHeight: Math.round(root.querySelector('.heading-mindmap-body-pane')?.getBoundingClientRect().height || 0),
+          previewCount: root.querySelectorAll('.heading-mindmap-body-preview.markdown-reading-view').length,
+          modeButtonCount: root.querySelectorAll('.heading-mindmap-body-mode-button').length,
+          resizerCount: root.querySelectorAll('.heading-mindmap-body-resizer').length
+        };
+        await app.workspace.getLeavesOfType('heading-mindmap-view')[0].detach();
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await app.workspace.getLeaf(false).openFile(product);
+        await app.commands.executeCommandById('heading-mindmap:open');
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        root = visibleView();
+        const afterMinimizeReopen = {
+          splitMinimized: root.querySelector('.heading-mindmap-split')?.classList.contains('is-body-pane-minimized') || false,
+          paneMinimized: root.querySelector('.heading-mindmap-body-pane')?.classList.contains('is-minimized') || false,
+          previewCount: root.querySelectorAll('.heading-mindmap-body-preview.markdown-reading-view').length,
+          resizerCount: root.querySelectorAll('.heading-mindmap-body-resizer').length
+        };
+        root.querySelector('.heading-mindmap-body-minimize-button')?.click();
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        root = visibleView();
+        const afterRestoreBodyPane = {
+          splitMinimized: root.querySelector('.heading-mindmap-split')?.classList.contains('is-body-pane-minimized') || false,
+          paneMinimized: root.querySelector('.heading-mindmap-body-pane')?.classList.contains('is-minimized') || false,
+          previewCount: root.querySelectorAll('.heading-mindmap-body-preview.markdown-reading-view').length,
+          markdownRendered: root.querySelectorAll('.heading-mindmap-body-pane .markdown-preview-view.markdown-rendered').length,
+          modeButtonCount: root.querySelectorAll('.heading-mindmap-body-mode-button').length,
+          resizerCount: root.querySelectorAll('.heading-mindmap-body-resizer').length
+        };
+        report.bodyPaneMinimize = {
+          beforeMinimize,
+          afterMinimize,
+          afterMinimizeReopen,
+          afterRestore: afterRestoreBodyPane
+        };
 
         findExactLabel(root, 'H1:产品路线图')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -613,6 +664,16 @@ async function main() {
     assert(report.open.bodyHeight >= report.open.canvasHeight, "正文区域高度小于导图区", report.open);
     assert(report.open.titleCenterDelta === 0, "节点标题未垂直居中", report.open);
     assert(report.sourceMode.sourceView === 1 && report.sourceMode.cmEditor === 1, "源码编辑视图没有使用 Obsidian/CM6 结构", report.sourceMode);
+    assert(report.bodyPaneMinimize.afterMinimize.splitMinimized, "正文区域最小化后 split 未进入最小化布局", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterMinimize.paneMinimized, "正文区域最小化后 pane 未进入最小化状态", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterMinimize.canvasHeight > report.bodyPaneMinimize.beforeMinimize.canvasHeight, "正文区域最小化后导图区没有变高", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterMinimize.previewCount === 0, "正文区域最小化后仍渲染正文预览", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterMinimize.modeButtonCount === 0, "正文区域最小化后仍显示阅读/编辑切换按钮", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterMinimize.resizerCount === 0, "正文区域最小化后仍显示拖拽条", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterMinimizeReopen.paneMinimized, "关闭重开后正文区域最小化状态未保留", report.bodyPaneMinimize);
+    assert(!report.bodyPaneMinimize.afterRestore.paneMinimized, "正文区域展开后仍处于最小化状态", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterRestore.previewCount === 1 && report.bodyPaneMinimize.afterRestore.markdownRendered === 1, "正文区域展开后没有恢复阅读预览", report.bodyPaneMinimize);
+    assert(report.bodyPaneMinimize.afterRestore.resizerCount === 1, "正文区域展开后没有恢复拖拽条", report.bodyPaneMinimize);
     assert(report.doubleClick.foldedCount === 1 && report.doubleClick.restoredLabels.length >= 5, "普通节点双击折叠/展开失败", report.doubleClick);
     assert(report.externalRefresh.labels.some((label) => label.includes("外部刷新标题")), "普通 Markdown 修改后导图没有自动刷新", report.externalRefresh);
     assert(report.fileOutline.expandedFileLabels.some((label) => label.includes("外部章节")), "文件节点未展开目标 Markdown 大纲", report.fileOutline);
