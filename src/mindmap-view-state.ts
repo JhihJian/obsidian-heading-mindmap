@@ -134,6 +134,15 @@ function walkNodeKeys(
   siblings: MindNode[],
   visit: (node: MindNode, key: string) => void
 ): void {
+  if (node.type === "document") {
+    visit(node, "document-root");
+    const realChildren = node.children.filter((child) => !child.virtual);
+    for (let index = 0; index < realChildren.length; index += 1) {
+      walkNodeKeys(realChildren[index], "", index, realChildren, visit);
+    }
+    return;
+  }
+
   const sameTitleIndex = siblings
     .slice(0, indexInSiblings + 1)
     .filter((sibling) => !sibling.virtual && sibling.title === node.title).length - 1;

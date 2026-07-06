@@ -11,6 +11,17 @@ import {
   serializeMindmapMarkdown
 } from "../src/mindmap-model";
 
+function findByTitle(root: ReturnType<typeof parseMindmapMarkdown>, title: string) {
+  const stack = [root];
+  while (stack.length > 0) {
+    const node = stack.shift();
+    if (!node) continue;
+    if (node.title === title) return node;
+    stack.unshift(...node.children);
+  }
+  throw new Error(`找不到节点：${title}`);
+}
+
 describe("buildOutlineTree", () => {
   it("把扁平 Markdown 标题缓存转换为层级导图节点", () => {
     const nodes = buildOutlineTree("notes/project.md", [
@@ -99,7 +110,7 @@ describe("Mindmap serialization", () => {
 
     expect(restored.title).toBe("我的思维导图");
     expect(restored.bodyCollapsed).toBe(true);
-    expect(restored.children[0]).toMatchObject({
+    expect(restored.children[1]).toMatchObject({
       type: "file",
       title: "project",
       filePath: "notes/project.md"
@@ -131,30 +142,37 @@ describe("Mindmap Markdown files", () => {
     );
 
     expect(root).toMatchObject({
-      type: "heading",
-      title: "产品规划",
-      body: "根节点正文第一段。",
-      headingLevel: 1,
+      type: "document",
+      title: "导图",
+      body: "",
       children: [
         {
           type: "heading",
-          title: "目标",
-          body: "- 支持标题和正文",
-          headingLevel: 2,
+          title: "产品规划",
+          body: "根节点正文第一段。",
+          headingLevel: 1,
           children: [
             {
-              title: "子目标",
-              body: "子目标正文。",
-              headingLevel: 3,
+              type: "heading",
+              title: "目标",
+              body: "- 支持标题和正文",
+              headingLevel: 2,
+              children: [
+                {
+                  title: "子目标",
+                  body: "子目标正文。",
+                  headingLevel: 3,
+                  children: []
+                }
+              ]
+            },
+            {
+              title: "风险",
+              body: "风险正文。",
+              headingLevel: 2,
               children: []
             }
           ]
-        },
-        {
-          title: "风险",
-          body: "风险正文。",
-          headingLevel: 2,
-          children: []
         }
       ]
     });
@@ -166,8 +184,9 @@ describe("Mindmap Markdown files", () => {
       ["# C#", "", "## 标题 ###"].join("\n")
     );
 
-    expect(root.title).toBe("C#");
-    expect(root.children[0].title).toBe("标题");
+    const heading = root.children[0];
+    expect(heading.title).toBe("C#");
+    expect(heading.children[0].title).toBe("标题");
     expect(serializeMindmapMarkdown(root)).toBe(
       ["# C#", "", "## 标题", ""].join("\n")
     );
@@ -185,8 +204,9 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.title).toBe("产品规划");
-    expect(root.children[0]).toMatchObject({
+    const heading = root.children[0];
+    expect(heading.title).toBe("产品规划");
+    expect(heading.children[0]).toMatchObject({
       title: "目标",
       body: "    ### 代码里的伪标题"
     });
@@ -215,9 +235,10 @@ describe("Mindmap Markdown files", () => {
       "## 真实标题"
     ].join("\n");
     const root = parseMindmapMarkdown("projects/导图.md", markdown);
+    const heading = root.children[0];
 
-    expect(root.children.map((node) => node.title)).toEqual(["真实标题"]);
-    expect(root.body).toBe(["````", "```", "# 代码里的伪标题", "```", "````"].join("\n"));
+    expect(heading.children.map((node) => node.title)).toEqual(["真实标题"]);
+    expect(heading.body).toBe(["````", "```", "# 代码里的伪标题", "```", "````"].join("\n"));
     expect(serializeMindmapMarkdown(root)).toBe(`${markdown}\n`);
   });
 
@@ -233,13 +254,14 @@ describe("Mindmap Markdown files", () => {
       "## 真实标题"
     ].join("\n");
     const root = parseMindmapMarkdown("projects/导图.md", markdown);
+    const heading = root.children[0];
 
-    expect(root.children.map((node) => node.title)).toEqual(["真实标题"]);
-    expect(root.body).toBe(["```", "```not-close", "# 代码里的伪标题", "```"].join("\n"));
+    expect(heading.children.map((node) => node.title)).toEqual(["真实标题"]);
+    expect(heading.body).toBe(["```", "```not-close", "# 代码里的伪标题", "```"].join("\n"));
     expect(serializeMindmapMarkdown(root)).toBe(`${markdown}\n`);
   });
 
-  it("没有一级标题但有子标题时，用文件名作为根节点标题，并把标题前正文保留在文件顶部", () => {
+  it("没有一级标题但有子标题时，用文件名作为文档根标题，并保持原始标题层级", () => {
     const root = parseMindmapMarkdown(
       "notes/project-map.md",
       [
@@ -252,20 +274,20 @@ describe("Mindmap Markdown files", () => {
     );
 
     expect(root).toMatchObject({
+      type: "document",
       title: "project-map",
-      body: "",
+      body: "导图开头说明。",
       children: [
         {
           title: "第一部分",
-          body: "第一部分正文。"
+          body: "第一部分正文。",
+          headingLevel: 2
         }
       ]
     });
     expect(serializeMindmapMarkdown(root)).toBe(
       [
         "导图开头说明。",
-        "",
-        "# project-map",
         "",
         "## 第一部分",
         "",
@@ -287,7 +309,7 @@ describe("Mindmap Markdown files", () => {
       children: []
     });
     expect(serializeMindmapMarkdown(root)).toBe(
-      ["# free-note", "", "自由笔记第一段。", "", "- 列表内容", ""].join("\n")
+      ["自由笔记第一段。", "", "- 列表内容", ""].join("\n")
     );
   });
 
@@ -304,7 +326,7 @@ describe("Mindmap Markdown files", () => {
       children: []
     });
     expect(serializeMindmapMarkdown(root)).toBe(
-      ["---", "tags:", "  - project", "---", "", "# free-note", "", "自由笔记正文。", ""].join("\n")
+      ["---", "tags:", "  - project", "---", "", "自由笔记正文。", ""].join("\n")
     );
   });
 
@@ -328,8 +350,6 @@ describe("Mindmap Markdown files", () => {
         "tags:",
         "  - project",
         "---",
-        "",
-        "# free-note",
         "",
         "自由笔记正文。",
         ""
@@ -376,8 +396,6 @@ describe("Mindmap Markdown files", () => {
         "tags:",
         "  - project",
         "---",
-        "",
-        "# free-note",
         "",
         "自由笔记正文。",
         ""
@@ -433,7 +451,7 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.children[0]).toMatchObject({
+    expect(findByTitle(root, "project")).toMatchObject({
       type: "file",
       title: "project",
       body: "文件节点备注。",
@@ -462,7 +480,7 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.children[0]).toMatchObject({
+    expect(findByTitle(root, "project")).toMatchObject({
       type: "file",
       title: "project",
       filePath: "notes/project.md"
@@ -479,12 +497,12 @@ describe("Mindmap Markdown files", () => {
       ["# 产品规划", "", "## [[notes/tasks^abc123|tasks]]"].join("\n")
     );
 
-    expect(headingLinkRoot.children[0]).toMatchObject({
+    expect(findByTitle(headingLinkRoot, "project")).toMatchObject({
       type: "file",
       title: "project",
       filePath: "notes/project.md"
     });
-    expect(blockLinkRoot.children[0]).toMatchObject({
+    expect(findByTitle(blockLinkRoot, "tasks")).toMatchObject({
       type: "file",
       title: "tasks",
       filePath: "notes/tasks.md"
@@ -500,7 +518,7 @@ describe("Mindmap Markdown files", () => {
       ["# 产品规划", "", "## [[#目标|目标]]"].join("\n")
     );
 
-    expect(root.children[0]).toMatchObject({
+    expect(findByTitle(root, "[[#目标|目标]]")).toMatchObject({
       type: "heading",
       title: "[[#目标|目标]]",
       filePath: "projects/导图.md"
@@ -520,7 +538,7 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.children[0]).toMatchObject({
+    expect(findByTitle(root, "project")).toMatchObject({
       type: "file",
       title: "project",
       filePath: "notes/project.md"
@@ -536,7 +554,7 @@ describe("Mindmap Markdown files", () => {
         "## [[notes/project.md|project]]"
       ].join("\n")
     );
-    root.children[0].title = "误改别名";
+    findByTitle(root, "project").title = "误改别名";
 
     expect(serializeMindmapMarkdown(root)).toBe(
       [
@@ -557,8 +575,9 @@ describe("Mindmap Markdown files", () => {
         "## [[notes/project.md|project]]"
       ].join("\n")
     );
-    root.children[0].outlineExpanded = true;
-    root.children[0].children = buildOutlineTree("notes/project.md", [
+    const fileNode = findByTitle(root, "project");
+    fileNode.outlineExpanded = true;
+    fileNode.children = buildOutlineTree("notes/project.md", [
       { heading: "外部文件标题", level: 1 },
       { heading: "外部文件子标题", level: 2 }
     ]);
@@ -591,10 +610,11 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.bodyCollapsed).toBe(true);
-    expect(root.body).toBe("根节点正文。");
-    expect(root.children[0].bodyCollapsed).toBe(true);
-    expect(root.children[0].body).toBe("目标正文。");
+    const heading = root.children[0];
+    expect(heading.bodyCollapsed).toBe(true);
+    expect(heading.body).toBe("根节点正文。");
+    expect(heading.children[0].bodyCollapsed).toBe(true);
+    expect(heading.children[0].body).toBe("目标正文。");
     expect(serializeMindmapMarkdown(root)).toBe(
       [
         "# 产品规划",
@@ -626,7 +646,8 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.body).toBe("根节点正文。");
+    expect(root.body).toBe("标题前说明。");
+    expect(root.children[0].body).toBe("根节点正文。");
     expect(serializeMindmapMarkdown(root)).toBe(
       [
         "---",
@@ -659,7 +680,7 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.title).toBe("产品规划");
+    expect(root.children[0].title).toBe("产品规划");
     expect(root.preface).toBe(["---", "# frontmatter 注释", "title: 项目", "---"].join("\n"));
     expect(serializeMindmapMarkdown(root)).toBe(
       [
@@ -682,9 +703,10 @@ describe("Mindmap Markdown files", () => {
       ["---", "", "# 产品规划", "", "根节点正文。"].join("\n")
     );
 
-    expect(root.title).toBe("产品规划");
-    expect(root.preface).toBe("---");
-    expect(root.body).toBe("根节点正文。");
+    expect(root.children[0].title).toBe("产品规划");
+    expect(root.preface).toBe("");
+    expect(root.body).toBe("---");
+    expect(root.children[0].body).toBe("根节点正文。");
     expect(serializeMindmapMarkdown(root)).toBe(
       ["---", "", "# 产品规划", "", "根节点正文。", ""].join("\n")
     );
@@ -696,9 +718,10 @@ describe("Mindmap Markdown files", () => {
       ["---", "title: 未闭合", "", "# 产品规划", "", "根节点正文。"].join("\n")
     );
 
-    expect(root.title).toBe("产品规划");
-    expect(root.preface).toBe(["---", "title: 未闭合"].join("\n"));
-    expect(root.body).toBe("根节点正文。");
+    expect(root.children[0].title).toBe("产品规划");
+    expect(root.preface).toBe("");
+    expect(root.body).toBe(["---", "title: 未闭合"].join("\n"));
+    expect(root.children[0].body).toBe("根节点正文。");
     expect(serializeMindmapMarkdown(root)).toBe(
       ["---", "title: 未闭合", "", "# 产品规划", "", "根节点正文。", ""].join("\n")
     );
@@ -718,9 +741,10 @@ describe("Mindmap Markdown files", () => {
     ].join("\n");
     const root = parseMindmapMarkdown("projects/导图.md", markdown);
 
-    expect(root.title).toBe("产品规划");
-    expect(root.preface).toBe("---");
-    expect(root.body).toBe(["根节点正文。", "", "---", "", "后续正文。"].join("\n"));
+    expect(root.children[0].title).toBe("产品规划");
+    expect(root.preface).toBe("");
+    expect(root.body).toBe("---");
+    expect(root.children[0].body).toBe(["根节点正文。", "", "---", "", "后续正文。"].join("\n"));
     expect(serializeMindmapMarkdown(root)).toBe(`${markdown}\n`);
   });
 
@@ -735,8 +759,9 @@ describe("Mindmap Markdown files", () => {
       ].join("\n")
     );
 
-    expect(root.children).toEqual([]);
-    expect(root.body).toBe("- 目标一\n- 目标二");
+    const heading = root.children[0];
+    expect(heading.children).toEqual([]);
+    expect(heading.body).toBe("- 目标一\n- 目标二");
   });
 
   it("开启列表项展开后，把正文列表项作为只读导图子节点展示且不改写 Markdown", () => {
@@ -751,7 +776,7 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([
+    expect(root.children[0].children).toMatchObject([
       {
         type: "list-item",
         title: "目标一",
@@ -777,7 +802,7 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([
+    expect(root.children[0].children).toMatchObject([
       {
         type: "list-item",
         title: "第一阶段",
@@ -802,7 +827,7 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([
+    expect(root.children[0].children).toMatchObject([
       {
         type: "list-item",
         title: "第一阶段",
@@ -823,7 +848,7 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([
+    expect(root.children[0].children).toMatchObject([
       { type: "list-item", title: "未完成任务" },
       { type: "list-item", title: "已完成任务" }
     ]);
@@ -844,8 +869,8 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
-    expect(root.children).toHaveLength(1);
+    expect(root.children[0].children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
+    expect(root.children[0].children).toHaveLength(1);
     expect(serializeMindmapMarkdown(root)).toBe(`${markdown}\n`);
   });
 
@@ -865,8 +890,8 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
-    expect(root.children).toHaveLength(1);
+    expect(root.children[0].children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
+    expect(root.children[0].children).toHaveLength(1);
     expect(serializeMindmapMarkdown(root)).toBe(`${markdown}\n`);
   });
 
@@ -885,8 +910,8 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
-    expect(root.children).toHaveLength(1);
+    expect(root.children[0].children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
+    expect(root.children[0].children).toHaveLength(1);
     expect(serializeMindmapMarkdown(root)).toBe(`${markdown}\n`);
   });
 
@@ -902,8 +927,8 @@ describe("Mindmap Markdown files", () => {
       expandListItems: true
     });
 
-    expect(root.children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
-    expect(root.children).toHaveLength(1);
+    expect(root.children[0].children).toMatchObject([{ type: "list-item", title: "真实列表" }]);
+    expect(root.children[0].children).toHaveLength(1);
     expect(serializeMindmapMarkdown(root)).toBe(`${markdown}\n`);
   });
 
@@ -916,7 +941,7 @@ describe("Mindmap Markdown files", () => {
     applyListItemExpansion(root, { expandListItems: true });
     applyListItemExpansion(root, { expandListItems: true });
 
-    expect(root.children).toMatchObject([{ type: "list-item", title: "目标一" }]);
-    expect(root.children).toHaveLength(1);
+    expect(root.children[0].children).toMatchObject([{ type: "list-item", title: "目标一" }]);
+    expect(root.children[0].children).toHaveLength(1);
   });
 });

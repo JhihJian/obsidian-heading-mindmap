@@ -9,7 +9,7 @@ describe("pending body edit", () => {
       "projects/map.md",
       ["# 产品", "", "## 目标", "", "旧正文", "", "## 风险"].join("\n")
     );
-    const target = root.children[0];
+    const target = root.children[0].children[0];
     const nodeKey = getNodeKey(root, target.id);
     if (!nodeKey) throw new Error("目标节点没有稳定 key");
 
@@ -19,8 +19,8 @@ describe("pending body edit", () => {
     );
 
     expect(applyPendingBodyEdit(reloaded, { nodeKey, body: "导图未落盘正文" })).toBe(true);
-    expect(reloaded.children[0].body).toBe("导图未落盘正文");
-    expect(reloaded.children[1].body).toBe("外部新增正文");
+    expect(reloaded.children[0].children[0].body).toBe("导图未落盘正文");
+    expect(reloaded.children[0].children[1].body).toBe("外部新增正文");
   });
 
   it("找不到结构节点时保持新解析结果不变", () => {
@@ -35,8 +35,8 @@ describe("pending body edit", () => {
       "projects/map.md",
       ["# 产品", "", "## 目标", "", "旧目标正文", "", "## 风险", "", "旧风险正文"].join("\n")
     );
-    const targetKey = getNodeKey(root, root.children[0].id);
-    const riskKey = getNodeKey(root, root.children[1].id);
+    const targetKey = getNodeKey(root, root.children[0].children[0].id);
+    const riskKey = getNodeKey(root, root.children[0].children[1].id);
     if (!targetKey || !riskKey) throw new Error("目标节点没有稳定 key");
 
     const reloaded = parseMindmapMarkdown(
@@ -50,7 +50,7 @@ describe("pending body edit", () => {
         { nodeKey: riskKey, body: "导图风险正文" }
       ])
     ).toBe(2);
-    expect(reloaded.children[0].body).toBe("导图目标正文");
-    expect(reloaded.children[1].body).toBe("导图风险正文");
+    expect(reloaded.children[0].children[0].body).toBe("导图目标正文");
+    expect(reloaded.children[0].children[1].body).toBe("导图风险正文");
   });
 });

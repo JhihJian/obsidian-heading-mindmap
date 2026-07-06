@@ -160,6 +160,10 @@
   box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.18);
 }
 
+.heading-mindmap-node.is-document {
+  background: color-mix(in srgb, var(--background-secondary), var(--text-muted) 8%);
+}
+
 .heading-mindmap-node.is-file {
   background: color-mix(in srgb, var(--background-secondary), var(--interactive-accent) 8%);
 }

@@ -15,6 +15,7 @@ const MAX_HEADING_LEVEL = 6;
 const HEADING_LIMIT_MESSAGE = "标题最多支持六级，不能在第六级节点下继续新建子节点。";
 export const READONLY_OUTLINE_MESSAGE = "当前节点是只读预览，请在对应 Markdown 文件或正文中编辑。";
 export const FILE_NODE_TITLE_MESSAGE = "文件节点标题由目标 Markdown 文件名决定。";
+export const DOCUMENT_NODE_TITLE_MESSAGE = "文档根节点标题由当前 Markdown 文件名决定。";
 
 export function addChildNode(root: MindNode, selectedNodeId: string, title = "新节点"): OperationResult {
   return addNodeAsChild(root, selectedNodeId, () => createTextNode(title, ""));
@@ -53,7 +54,7 @@ export function addSiblingNode(root: MindNode, selectedNodeId: string, title = "
   if (isReadonlyOutlineNode(root, selectedNodeId)) {
     return { ok: false, selectedNodeId, message: READONLY_OUTLINE_MESSAGE };
   }
-  if (!location.parent) return { ok: false, selectedNodeId, message: "根节点不能新建同级节点。" };
+  if (!location.parent) return { ok: false, selectedNodeId, message: "文档根节点不能新建同级节点。" };
 
   const sibling = createTextNode(title, "");
   sibling.headingLevel = getNodeLevel(location.node);
@@ -67,7 +68,7 @@ export function deleteNode(root: MindNode, selectedNodeId: string): OperationRes
   if (isReadonlyOutlineNode(root, selectedNodeId)) {
     return { ok: false, selectedNodeId, message: READONLY_OUTLINE_MESSAGE };
   }
-  if (!location.parent) return { ok: false, selectedNodeId, message: "根节点不能删除。" };
+  if (!location.parent) return { ok: false, selectedNodeId, message: "文档根节点不能删除。" };
 
   const previous = findAdjacentRealSibling(location.siblings, location.index, "previous");
   const next = findAdjacentRealSibling(location.siblings, location.index, "next");
@@ -89,7 +90,7 @@ export function moveNodeWithinSiblings(
   if (isReadonlyOutlineNode(root, selectedNodeId)) {
     return { ok: false, selectedNodeId, message: READONLY_OUTLINE_MESSAGE };
   }
-  if (!location.parent) return { ok: false, selectedNodeId, message: "根节点不能排序。" };
+  if (!location.parent) return { ok: false, selectedNodeId, message: "文档根节点不能排序。" };
 
   const targetIndex = findAdjacentRealSiblingIndex(location.siblings, location.index, direction);
   if (targetIndex === -1) {
@@ -107,7 +108,7 @@ export function promoteNode(root: MindNode, selectedNodeId: string): OperationRe
   if (isReadonlyOutlineNode(root, selectedNodeId)) {
     return { ok: false, selectedNodeId, message: READONLY_OUTLINE_MESSAGE };
   }
-  if (!location.parent) return { ok: false, selectedNodeId, message: "根节点不能升级。" };
+  if (!location.parent) return { ok: false, selectedNodeId, message: "文档根节点不能升级。" };
 
   const parentLocation = findLocation(root, location.parent.id);
   if (!parentLocation?.parent) {
@@ -139,6 +140,7 @@ export function canEditNodeTitle(
   const location = findLocation(root, selectedNodeId);
   if (!location) return { ok: false, message: "找不到当前选中的节点。" };
   if (isReadonlyOutlineNode(root, selectedNodeId)) return { ok: false, message: READONLY_OUTLINE_MESSAGE };
+  if (location.node.type === "document") return { ok: false, message: DOCUMENT_NODE_TITLE_MESSAGE };
   if (location.node.type === "file") return { ok: false, message: FILE_NODE_TITLE_MESSAGE };
   return { ok: true };
 }
@@ -169,6 +171,7 @@ function findLocation(root: MindNode, id: string): NodeLocation | null {
 }
 
 function getNodeLevel(node: MindNode): number {
+  if (node.type === "document") return 0;
   return node.headingLevel ?? 1;
 }
 

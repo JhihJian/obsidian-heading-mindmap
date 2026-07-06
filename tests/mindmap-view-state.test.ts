@@ -18,7 +18,7 @@ describe("mindmap view state", () => {
       "projects/map.md",
       ["# 产品", "", "## 目标", "", "### 子目标", "", "## 风险"].join("\n")
     );
-    root.children[0].childrenCollapsed = true;
+    root.children[0].children[0].childrenCollapsed = true;
 
     const stored = collectStoredMindmapState(root);
     const reopened = parseMindmapMarkdown(
@@ -28,8 +28,8 @@ describe("mindmap view state", () => {
 
     applyStoredMindmapState(reopened, stored);
 
-    expect(reopened.children[0].childrenCollapsed).toBe(true);
-    expect(reopened.children[1].childrenCollapsed).toBe(false);
+    expect(reopened.children[0].children[0].childrenCollapsed).toBe(true);
+    expect(reopened.children[0].children[1].childrenCollapsed).toBe(false);
   });
 
   it("按节点结构路径保存并恢复文件节点展开状态", () => {
@@ -37,7 +37,7 @@ describe("mindmap view state", () => {
       "projects/map.md",
       ["# 产品", "", "## [[notes/project.md|project]]"].join("\n")
     );
-    root.children[0].outlineExpanded = true;
+    root.children[0].children[0].outlineExpanded = true;
 
     const stored = collectStoredMindmapState(root);
     const reopened = parseMindmapMarkdown(
@@ -47,7 +47,7 @@ describe("mindmap view state", () => {
 
     applyStoredMindmapState(reopened, stored);
 
-    expect(reopened.children[0].outlineExpanded).toBe(true);
+    expect(reopened.children[0].children[0].outlineExpanded).toBe(true);
   });
 
   it("保存并规范化文件级默认视野状态，用于关闭导图后重新打开恢复", () => {
@@ -84,7 +84,7 @@ describe("mindmap view state", () => {
       ["# 产品", "", "- 目标", "", "## 目标", "", "### 子目标"].join("\n"),
       { expandListItems: true }
     );
-    const heading = root.children.find((node) => node.type === "heading" && node.title === "目标");
+    const heading = root.children[0].children.find((node) => node.type === "heading" && node.title === "目标");
     if (!heading) throw new Error("找不到真实标题节点");
     heading.childrenCollapsed = true;
 
@@ -96,7 +96,11 @@ describe("mindmap view state", () => {
 
     applyStoredMindmapState(reopened, stored);
 
-    expect(reopened.children[0]).toMatchObject({ type: "heading", title: "目标", childrenCollapsed: true });
+    expect(reopened.children[0].children[0]).toMatchObject({
+      type: "heading",
+      title: "目标",
+      childrenCollapsed: true
+    });
   });
 
   it("规范化视野状态，限制缩放边界并过滤非法滚动值", () => {
@@ -224,7 +228,7 @@ describe("mindmap view state", () => {
       "projects/map.md",
       ["# 产品", "", "## 目标", "", "## 目标", "", "### 子目标"].join("\n")
     );
-    const selected = root.children[1].children[0];
+    const selected = root.children[0].children[1].children[0];
 
     const key = getNodeKey(root, selected.id);
     expect(key).not.toBeNull();
@@ -233,7 +237,7 @@ describe("mindmap view state", () => {
       ["# 产品", "", "## 目标", "", "## 目标", "", "### 子目标"].join("\n")
     );
 
-    expect(getNodeIdByKey(reopened, key ?? undefined)).toBe(reopened.children[1].children[0].id);
+    expect(getNodeIdByKey(reopened, key ?? undefined)).toBe(reopened.children[0].children[1].children[0].id);
   });
 
   it("同一文件的不同 leaf 可分别恢复各自选中节点和视野状态", () => {
@@ -241,8 +245,8 @@ describe("mindmap view state", () => {
       "projects/map.md",
       ["# 产品", "", "## 目标", "", "## 风险"].join("\n")
     );
-    const targetKey = getNodeKey(root, root.children[0].id);
-    const riskKey = getNodeKey(root, root.children[1].id);
+    const targetKey = getNodeKey(root, root.children[0].children[0].id);
+    const riskKey = getNodeKey(root, root.children[0].children[1].id);
     const reopened = parseMindmapMarkdown(
       "projects/map.md",
       ["# 产品", "", "## 目标", "", "## 风险"].join("\n")
@@ -253,8 +257,8 @@ describe("mindmap view state", () => {
       viewport: { scale: 1.5, scrollLeft: 400, scrollTop: 500 }
     };
 
-    expect(getNodeIdByKey(reopened, targetKey ?? undefined)).toBe(reopened.children[0].id);
-    expect(getNodeIdByKey(reopened, riskKey ?? undefined)).toBe(reopened.children[1].id);
+    expect(getNodeIdByKey(reopened, targetKey ?? undefined)).toBe(reopened.children[0].children[0].id);
+    expect(getNodeIdByKey(reopened, riskKey ?? undefined)).toBe(reopened.children[0].children[1].id);
     expect(resolveInitialViewportState({ scale: 0.8, scrollLeft: 10, scrollTop: 20 }, stored)).toEqual({
       scale: 0.8,
       scrollLeft: 10,
@@ -274,6 +278,6 @@ describe("mindmap view state", () => {
       { expandListItems: true }
     );
 
-    expect(getNodeKey(root, root.children[0].id)).toBeNull();
+    expect(getNodeKey(root, root.children[0].children[0].id)).toBeNull();
   });
 });

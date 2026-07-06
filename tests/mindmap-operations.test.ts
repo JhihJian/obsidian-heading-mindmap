@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseMindmapMarkdown, serializeMindmapMarkdown } from "../src/mindmap-model";
+import { buildOutlineTreeFromMarkdown, parseMindmapMarkdown, serializeMindmapMarkdown } from "../src/mindmap-model";
 import {
   addChildNode,
   addFileChildNode,
@@ -98,9 +98,24 @@ describe("mindmap node operations", () => {
     const result = addSiblingNode(root, findByTitle(root, "目标").id, "范围");
 
     expect(result).toMatchObject({ ok: true });
-    expect(root.children.map((node) => node.title)).toEqual(["目标", "范围", "风险"]);
+    expect(findByTitle(root, "产品").children.map((node) => node.title)).toEqual(["目标", "范围", "风险"]);
     expect(serializeMindmapMarkdown(root)).toBe(
       ["# 产品", "", "## 目标", "", "## 范围", "", "## 风险", ""].join("\n")
+    );
+  });
+
+  it("在 H1 后新建同级 H1 节点", () => {
+    const root = parseMindmapMarkdown(
+      "projects/map.md",
+      ["# 产品", "", "## 目标", "", "# 复盘"].join("\n")
+    );
+
+    const result = addSiblingNode(root, findByTitle(root, "产品").id, "归档");
+
+    expect(result).toMatchObject({ ok: true });
+    expect(root.children.map((node) => node.title)).toEqual(["产品", "归档", "复盘"]);
+    expect(serializeMindmapMarkdown(root)).toBe(
+      ["# 产品", "", "## 目标", "", "# 归档", "", "# 复盘", ""].join("\n")
     );
   });
 
@@ -113,7 +128,7 @@ describe("mindmap node operations", () => {
     const result = deleteNode(root, findByTitle(root, "目标").id);
 
     expect(result).toEqual({ ok: true, selectedNodeId: findByTitle(root, "风险").id });
-    expect(root.children.map((node) => node.title)).toEqual(["风险"]);
+    expect(findByTitle(root, "产品").children.map((node) => node.title)).toEqual(["风险"]);
     expect(serializeMindmapMarkdown(root)).toBe(["# 产品", "", "## 风险", ""].join("\n"));
   });
 
@@ -124,10 +139,10 @@ describe("mindmap node operations", () => {
     );
 
     expect(moveNodeWithinSiblings(root, findByTitle(root, "B").id, "up")).toMatchObject({ ok: true });
-    expect(root.children.map((node) => node.title)).toEqual(["B", "A", "C"]);
+    expect(findByTitle(root, "产品").children.map((node) => node.title)).toEqual(["B", "A", "C"]);
 
     expect(moveNodeWithinSiblings(root, findByTitle(root, "B").id, "down")).toMatchObject({ ok: true });
-    expect(root.children.map((node) => node.title)).toEqual(["A", "B", "C"]);
+    expect(findByTitle(root, "产品").children.map((node) => node.title)).toEqual(["A", "B", "C"]);
   });
 
   it("升级节点时把节点移动到父节点之后，并同步降低子树标题级别", () => {
@@ -149,7 +164,7 @@ describe("mindmap node operations", () => {
     const result = promoteNode(root, findByTitle(root, "B").id);
 
     expect(result).toMatchObject({ ok: true });
-    expect(root.children.map((node) => node.title)).toEqual(["A", "B", "D"]);
+    expect(findByTitle(root, "产品").children.map((node) => node.title)).toEqual(["A", "B", "D"]);
     expect(findByTitle(root, "A").children).toEqual([]);
     expect(serializeMindmapMarkdown(root)).toBe(
       [
@@ -190,14 +205,9 @@ describe("mindmap node operations", () => {
       "projects/map.md",
       ["# 产品", "", "## [[notes/project.md|project]]"].join("\n")
     );
-    const fileNode = root.children[0];
+    const fileNode = findByTitle(root, "project");
     fileNode.outlineExpanded = true;
-    fileNode.children = [
-      {
-        ...parseMindmapMarkdown("notes/project.md", "# 外部标题"),
-        filePath: "notes/project.md"
-      }
-    ];
+    fileNode.children = buildOutlineTreeFromMarkdown("notes/project.md", "# 外部标题");
 
     expect(addChildNode(root, fileNode.children[0].id, "误编辑")).toMatchObject({
       ok: false,
@@ -252,7 +262,7 @@ describe("mindmap node operations", () => {
       ["# 产品", "", "## [[notes/project.md|project]]"].join("\n")
     );
 
-    expect(canEditNodeTitle(root, root.children[0].id)).toEqual({
+    expect(canEditNodeTitle(root, findByTitle(root, "project").id)).toEqual({
       ok: false,
       message: "文件节点标题由目标 Markdown 文件名决定。"
     });
@@ -263,11 +273,12 @@ describe("mindmap node operations", () => {
       "projects/map.md",
       ["# 产品", "", "## [[notes/project.md|project]]"].join("\n")
     );
-    const fileNode = root.children[0];
+    const fileNode = findByTitle(root, "project");
     fileNode.outlineExpanded = true;
-    fileNode.children = [
-      parseMindmapMarkdown("notes/project.md", "# 外部标题\n\n## [[notes/other.md|other]]")
-    ];
+    fileNode.children = buildOutlineTreeFromMarkdown(
+      "notes/project.md",
+      "# 外部标题\n\n## [[notes/other.md|other]]"
+    );
     const nestedFileNode = fileNode.children[0].children[0];
 
     expect(canEditNodeTitle(root, nestedFileNode.id)).toEqual({
@@ -285,16 +296,17 @@ describe("mindmap node operations", () => {
     const listItem = findByTitle(root, "列表项");
     const headingA = findByTitle(root, "A");
     const headingB = findByTitle(root, "B");
+    const product = findByTitle(root, "产品");
 
     expect(moveNodeWithinSiblings(root, headingA.id, "up")).toMatchObject({
       ok: false,
       selectedNodeId: headingA.id,
       message: "当前节点已经在同级节点边界。"
     });
-    expect(root.children.map((node) => node.id)).toEqual([listItem.id, headingA.id, headingB.id]);
+    expect(product.children.map((node) => node.id)).toEqual([listItem.id, headingA.id, headingB.id]);
 
     expect(deleteNode(root, headingA.id)).toEqual({ ok: true, selectedNodeId: headingB.id });
-    expect(root.children.map((node) => node.id)).toEqual([listItem.id, headingB.id]);
+    expect(product.children.map((node) => node.id)).toEqual([listItem.id, headingB.id]);
     expect(serializeMindmapMarkdown(root)).toBe(["# 产品", "", "- 列表项", "", "## B", ""].join("\n"));
   });
 });

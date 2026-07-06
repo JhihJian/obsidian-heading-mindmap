@@ -1,4 +1,4 @@
-export type MindNodeType = "text" | "file" | "heading" | "list-item";
+export type MindNodeType = "document" | "text" | "file" | "heading" | "list-item";
 
 export type OutlineHeading = {
   heading: string;
@@ -46,14 +46,21 @@ const COLLAPSED_COMMENTS = new Set([
 ]);
 
 export function createStarterMindmap(): MindNode {
+  const heading = createTextNode(
+    "我的思维导图",
+    "在这里写主题说明。上方导图编辑标题结构，下方正文区域查看和编辑当前节点正文。"
+  );
+  heading.headingLevel = 1;
+
   return {
     id: "root",
-    type: "text",
+    type: "document",
     title: "我的思维导图",
-    body: "在这里写主题说明。上方导图编辑标题结构，下方正文区域查看和编辑当前节点正文。",
+    body: "",
     bodyCollapsed: false,
     childrenCollapsed: false,
-    children: []
+    children: [heading],
+    headingLevel: 0
   };
 }
 
@@ -122,11 +129,7 @@ export function buildOutlineTree(filePath: string, headings: OutlineHeading[]): 
 }
 
 export function buildOutlineTreeFromMarkdown(filePath: string, markdown: string): MindNode[] {
-  const { sections } = splitMarkdownSections(markdown);
   const root = parseMindmapMarkdown(filePath, markdown);
-  if (sections[0]?.level === 1) {
-    return [root];
-  }
   return root.children;
 }
 
@@ -144,49 +147,17 @@ export function parseMindmapMarkdown(
   markdown: string,
   options: ParseMindmapOptions = {}
 ): MindNode {
-  const { preface, frontmatter, prefaceBody, prefaceBodyCollapsed, sections } = splitMarkdownSections(markdown);
+  const { frontmatter, prefaceBody, prefaceBodyCollapsed, sections } = splitMarkdownSections(markdown);
 
-  if (sections.length === 0) {
-    const root: MindNode = {
-      id: "root",
-      type: "heading",
-      title: getFileTitle(filePath),
-      body: prefaceBody,
-      bodyCollapsed: prefaceBodyCollapsed,
-      childrenCollapsed: false,
-      children: [],
-      filePath,
-      headingLevel: 1,
-      preface: frontmatter
-    };
-    applyListItemExpansion(root, options);
-    return root;
-  }
-
-  const firstSection = sections[0];
-  const hasExplicitRoot = firstSection.level === 1;
-  const root = hasExplicitRoot
-    ? createHeadingNode(filePath, firstSection)
-    : {
-        id: "root",
-        type: "heading" as const,
-        title: getFileTitle(filePath),
-        body: "",
-        bodyCollapsed: false,
-        children: [],
-        filePath,
-        headingLevel: 1,
-        preface
-      };
-
-  if (hasExplicitRoot) {
-    root.preface = preface;
-  }
-
+  const root = createDocumentNode({
+    filePath,
+    body: prefaceBody,
+    bodyCollapsed: sections.length === 0 ? prefaceBodyCollapsed : false,
+    preface: frontmatter
+  });
   const stack: MindNode[] = [root];
-  const childSections = hasExplicitRoot ? sections.slice(1) : sections;
 
-  for (const section of childSections) {
+  for (const section of sections) {
     const node = createHeadingNode(filePath, section);
 
     while (
@@ -235,9 +206,22 @@ export function serializeMindmapMarkdown(root: MindNode): string {
 
   const preface = trimBlankLines(root.preface ?? "");
   if (preface) {
-    lines.push(preface, "");
+    lines.push(preface);
   }
-  writeNode(root, 1);
+
+  const rootBody = root.type === "document" ? trimBlankLines(root.body) : "";
+  if (rootBody) {
+    if (lines.length > 0) lines.push("");
+    lines.push(rootBody);
+  }
+
+  const roots = root.type === "document" ? root.children : [root];
+  for (const node of roots) {
+    if (node.virtual) continue;
+    if (lines.length > 0) lines.push("");
+    writeNode(node, 1);
+  }
+
   lines.push("");
   return lines.join("\n");
 }
@@ -265,12 +249,31 @@ function normalizeNode(node: SerializedMindNode): MindNode {
   };
 }
 
+function createDocumentNode(options: {
+  filePath: string;
+  body: string;
+  bodyCollapsed: boolean;
+  preface: string;
+}): MindNode {
+  return {
+    id: "root",
+    type: "document",
+    title: getFileTitle(options.filePath),
+    body: options.body,
+    bodyCollapsed: options.bodyCollapsed,
+    childrenCollapsed: false,
+    children: [],
+    filePath: options.filePath,
+    headingLevel: 0,
+    preface: options.preface
+  };
+}
+
 function createNodeId(prefix: MindNodeType): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function splitMarkdownSections(markdown: string): {
-  preface: string;
   frontmatter: string;
   prefaceBody: string;
   prefaceBodyCollapsed: boolean;
@@ -278,7 +281,6 @@ function splitMarkdownSections(markdown: string): {
 } {
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
   const sections: MarkdownSection[] = [];
-  const prefaceLines: string[] = [];
   const frontmatterLines: string[] = [];
   const prefaceBodyLines: string[] = [];
   let current: { level: number; title: string; bodyLines: string[] } | null = null;
@@ -288,7 +290,6 @@ function splitMarkdownSections(markdown: string): {
 
   for (const line of lines) {
     if (inFrontmatter) {
-      prefaceLines.push(line);
       frontmatterLines.push(line);
       frontmatterLineIndex += 1;
       if (frontmatterLineIndex > 1 && isFrontmatterDelimiter(line)) {
@@ -315,7 +316,6 @@ function splitMarkdownSections(markdown: string): {
     if (current) {
       current.bodyLines.push(line);
     } else {
-      prefaceLines.push(line);
       prefaceBodyLines.push(line);
     }
   }
@@ -330,7 +330,6 @@ function splitMarkdownSections(markdown: string): {
 
   const parsedPrefaceBody = parseSectionBody(prefaceBodyLines.join("\n"));
   return {
-    preface: trimBlankLines(prefaceLines.join("\n")),
     frontmatter: trimBlankLines(frontmatterLines.join("\n")),
     prefaceBody: parsedPrefaceBody.body,
     prefaceBodyCollapsed: parsedPrefaceBody.bodyCollapsed,
