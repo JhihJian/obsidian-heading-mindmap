@@ -30,4 +30,18 @@ describe("styles contract", () => {
     expect(css).not.toMatch(/\.markdown-(preview-view|rendered|source-view)\s+(h1|h2|h3|p|ul|ol|blockquote|pre|code)\b/);
     expect(css).not.toMatch(/\.heading-mindmap-body-source\s+\.cm-(line|content)\b/);
   });
+
+  it("导图节点标题完整展示，不用省略号截断", () => {
+    const nodeRule = getRule(".heading-mindmap-node");
+    const titleRule = getRule(".heading-mindmap-node-title");
+    const titleInputRule = getRule(".heading-mindmap-node-title-input");
+
+    expect(nodeRule).toContain("overflow: visible");
+    expect(titleRule).toContain("overflow-wrap: anywhere");
+    expect(titleRule).toContain("white-space: normal");
+    expect(titleRule).not.toContain("text-overflow");
+    expect(titleRule).not.toContain("nowrap");
+    expect(titleInputRule).toContain("overflow-wrap: anywhere");
+    expect(titleInputRule).toContain("white-space: pre-wrap");
+  });
 });

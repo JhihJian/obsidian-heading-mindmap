@@ -23,11 +23,11 @@
    ```
 
 3. 提交并推送默认分支。
-4. 创建和 `manifest.json` 版本完全一致的 tag：
+4. 创建和 `manifest.json` 版本完全一致的 tag。以下示例假设当前版本为 `0.1.1`，实际发布时应替换为 `manifest.json` 中的版本：
 
    ```powershell
-   git tag -a 0.1.0 -m "0.1.0"
-   git push origin 0.1.0
+   git tag -a 0.1.1 -m "0.1.1"
+   git push origin 0.1.1
    ```
 
 5. 等待 GitHub Actions 创建草稿 Release。

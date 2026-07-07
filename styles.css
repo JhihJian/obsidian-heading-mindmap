@@ -1,6 +1,6 @@
 .heading-mindmap-view {
-  --mindmap-node-width: 240px;
-  --mindmap-node-height: 58px;
+  --mindmap-node-min-width: 240px;
+  --mindmap-node-min-height: 58px;
   background: var(--background-primary);
   height: 100%;
   overflow: hidden;
@@ -147,12 +147,12 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  height: var(--mindmap-node-height);
+  min-height: var(--mindmap-node-min-height);
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   padding: 0 10px;
   position: absolute;
-  width: var(--mindmap-node-width);
+  min-width: var(--mindmap-node-min-width);
 }
 
 .heading-mindmap-node.is-selected {
@@ -186,13 +186,14 @@
 }
 
 .heading-mindmap-node-title {
+  flex: 1 1 auto;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.3;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .heading-mindmap-node-title-input {
@@ -202,11 +203,18 @@
   box-sizing: border-box;
   color: var(--text-normal);
   flex: 1 1 auto;
+  font-family: inherit;
   font-size: 15px;
   font-weight: 700;
-  height: 28px;
+  height: 100%;
+  line-height: 1.3;
+  min-height: 28px;
   min-width: 0;
+  overflow-wrap: anywhere;
   padding: 2px 6px;
+  resize: none;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .heading-mindmap-node-badge {

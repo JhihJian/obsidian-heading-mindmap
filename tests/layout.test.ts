@@ -24,8 +24,12 @@ describe("layoutMindmap", () => {
     const positions = Object.fromEntries(layout.nodes.map((node) => [node.id, node]));
 
     expect(positions.a.x).toBeGreaterThan(positions.root.x);
+    expect(positions.a.x).toBeGreaterThan(positions.root.x + positions.root.width);
     expect(positions.b1.x).toBeGreaterThan(positions.b.x);
-    expect(positions.b.y).toBe((positions.b1.y + positions.b2.y) / 2);
+    expect(positions.b1.x).toBeGreaterThan(positions.b.x + positions.b.width);
+    expect(positions.b.y + positions.b.height / 2).toBe(
+      (positions.b1.y + positions.b1.height / 2 + positions.b2.y + positions.b2.height / 2) / 2
+    );
     expect(layout.width).toBeGreaterThan(positions.b1.x);
     expect(layout.height).toBeGreaterThan(positions.b2.y);
   });
@@ -45,5 +49,26 @@ describe("layoutMindmap", () => {
 
     expect(layout.nodes.map((node) => node.id)).toEqual(["root"]);
     expect(layout.edges).toEqual([]);
+  });
+
+  it("长标题节点按内容扩展尺寸，并为后续节点预留空间", () => {
+    const root: MindNode = {
+      ...createTextNode("root"),
+      id: "root",
+      children: [
+        {
+          ...createTextNode("这是一个很长的导图节点标题，需要完整换行展示而不是在中间被省略"),
+          id: "long"
+        },
+        { ...createTextNode("short"), id: "short" }
+      ]
+    };
+
+    const layout = layoutMindmap(root);
+    const positions = Object.fromEntries(layout.nodes.map((node) => [node.id, node]));
+
+    expect(positions.long.width).toBeGreaterThan(positions.short.width);
+    expect(positions.long.height).toBeGreaterThan(positions.short.height);
+    expect(positions.short.y).toBeGreaterThanOrEqual(positions.long.y + positions.long.height + 40);
   });
 });
