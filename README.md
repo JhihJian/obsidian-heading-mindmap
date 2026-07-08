@@ -4,6 +4,8 @@ Heading Mindmap is an Obsidian plugin that opens Markdown heading structures as 
 
 It keeps Markdown as the source of truth. The mind map shows the heading tree at the top, while the bottom pane lets you read or edit the selected section body. Title, body, and structure changes are written back to the original Markdown file.
 
+![Heading Mindmap product overview](docs/assets/heading-mindmap-product-mindmap-example-aligned.png)
+
 ## Features
 
 - Open a Markdown note as a dedicated mind map view.
