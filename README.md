@@ -22,7 +22,7 @@ It keeps Markdown as the source of truth. The mind map shows the heading tree at
 
 ## Usage
 
-Enable `Heading Mindmap` in Obsidian settings, then run the command `打开思维导图` (`heading-mindmap:open`).
+Enable `Heading Mindmap` in Obsidian settings, then run the command `Open mind map` (`heading-mindmap:open`). In Chinese Obsidian languages, the same command is shown as `打开思维导图`.
 
 The command opens the current Markdown file as a mind map. If the current tab is already a mind map for the same file, the existing view is reused; otherwise a new tab is opened so the normal Markdown source view can stay available.
 
@@ -126,4 +126,4 @@ manifest.json
 styles.css
 ```
 
-然后在 Obsidian 设置中启用 `Heading Mindmap`，用命令面板执行 `打开思维导图`。命令默认在新 tab 打开导图以保留当前 Markdown 源码视图；如果当前 tab 已经是同一文件的导图，则复用当前导图。
+然后在 Obsidian 设置中启用 `Heading Mindmap`，用命令面板执行 `打开思维导图`（英文界面显示为 `Open mind map`）。命令默认在新 tab 打开导图以保留当前 Markdown 源码视图；如果当前 tab 已经是同一文件的导图，则复用当前导图。
