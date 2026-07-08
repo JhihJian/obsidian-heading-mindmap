@@ -2,7 +2,7 @@ import type { MindNode } from "./mindmap-model";
 import { shouldChangeSelectedNode } from "./node-selection";
 import { layoutMindmap, type LayoutNode } from "./tree-layout";
 import type { MindmapViewportState } from "./mindmap-view-state";
-import { getStableScrollAreaSize, restoreViewportScroll } from "./viewport-dom";
+import { getSurfacePlacement, restoreViewportScroll, type ViewportPoint } from "./viewport-dom";
 
 export interface MindmapCanvasRenderResult {
   surfaceEl: HTMLElement;
@@ -16,7 +16,7 @@ export interface MindmapCanvasOptions {
   onKeydown: (event: KeyboardEvent) => void;
   onScroll: () => void;
   onFocusCanvas: () => void;
-  onScaleChange: (scale: number) => void;
+  onScaleChange: (scaleDelta: number, center?: ViewportPoint) => void;
   onSelectNode: (nodeId: string) => void;
   onToggleFileOutline: (node: MindNode) => void;
   onToggleNodeChildrenFold: (node: MindNode) => void;
@@ -42,22 +42,25 @@ export function renderMindmapCanvas(canvas: HTMLElement, options: MindmapCanvasO
   canvas.onwheel = (event) => {
     if (!event.ctrlKey) return;
     event.preventDefault();
-    options.onScaleChange(options.viewport.scale + (event.deltaY > 0 ? -0.1 : 0.1));
+    const rect = canvas.getBoundingClientRect();
+    options.onScaleChange(event.deltaY > 0 ? -0.1 : 0.1, {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    });
   };
 
   const scrollArea = canvas.createDiv({ cls: "heading-mindmap-scroll-area" });
-  scrollArea.style.width = `${getStableScrollAreaSize(
-    layout.width * options.viewport.scale,
-    options.viewport.scrollLeft,
-    canvas.clientWidth
-  )}px`;
-  scrollArea.style.height = `${getStableScrollAreaSize(
-    layout.height * options.viewport.scale,
-    options.viewport.scrollTop,
-    canvas.clientHeight
-  )}px`;
+  const placement = getSurfacePlacement(
+    { width: layout.width, height: layout.height },
+    { width: canvas.clientWidth, height: canvas.clientHeight },
+    options.viewport
+  );
+  scrollArea.style.width = `${placement.scrollAreaWidth}px`;
+  scrollArea.style.height = `${placement.scrollAreaHeight}px`;
 
   const surface = scrollArea.createDiv({ cls: "heading-mindmap-surface" });
+  surface.style.left = `${placement.offsetLeft}px`;
+  surface.style.top = `${placement.offsetTop}px`;
   surface.style.width = `${layout.width}px`;
   surface.style.height = `${layout.height}px`;
   surface.style.transform = `scale(${options.viewport.scale})`;

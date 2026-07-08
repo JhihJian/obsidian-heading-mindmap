@@ -104,8 +104,8 @@ describe("mindmap view state", () => {
   });
 
   it("规范化视野状态，限制缩放边界并过滤非法滚动值", () => {
-    expect(normalizeViewportState({ scale: 0.1, scrollLeft: -1, scrollTop: Number.NaN })).toEqual({
-      scale: 0.5,
+    expect(normalizeViewportState({ scale: 0.05, scrollLeft: -1, scrollTop: Number.NaN })).toEqual({
+      scale: 0.1,
       scrollLeft: 0,
       scrollTop: 0
     });

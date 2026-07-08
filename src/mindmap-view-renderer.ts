@@ -16,8 +16,18 @@ import { findNode } from "./mindmap-navigation";
 import { renderMindmapCanvas } from "./mindmap-canvas-dom";
 import { renderMindmapToolbar } from "./mindmap-toolbar-dom";
 import { layoutMindmap } from "./tree-layout";
-import { preserveViewportForRender } from "./viewport-dom";
-import { normalizeBodyPaneSize, normalizeViewportState, type BodyPaneSizeState, type MindmapViewportState } from "./mindmap-view-state";
+import {
+  applyViewportToDom, getElementViewportSize, getFitViewportState, getZoomedViewportState,
+  preserveViewportForRender, type ViewportPoint
+} from "./viewport-dom";
+import {
+  DEFAULT_VIEWPORT_SCALE,
+  VIEWPORT_SCALE_STEP,
+  normalizeBodyPaneSize,
+  normalizeViewportState,
+  type BodyPaneSizeState,
+  type MindmapViewportState
+} from "./mindmap-view-state";
 import type { MindNode } from "./mindmap-model";
 import type { MindmapViewStore } from "./mindmap-view-store";
 import type { MindmapViewActions } from "./mindmap-view-actions";
@@ -44,7 +54,12 @@ export class MindmapViewRenderer {
     renderMindmapToolbar(toolbar, {
       title: this.store.currentFile?.basename ?? "思维导图",
       path: this.store.currentFile?.path ?? "选择或创建一个 Markdown 导图文件",
+      scale: this.store.viewport.scale,
       expandListItems: this.store.plugin.getExpandListItems(),
+      onZoomOut: () => this.setScale(this.readViewportFromDom().scale - VIEWPORT_SCALE_STEP),
+      onZoomIn: () => this.setScale(this.readViewportFromDom().scale + VIEWPORT_SCALE_STEP),
+      onFitToView: () => this.fitToView(),
+      onResetZoom: () => this.setScale(DEFAULT_VIEWPORT_SCALE),
       onToggleListItems: (value) => {
         void this.actions?.setListItemExpansion(value);
       },
@@ -64,7 +79,7 @@ export class MindmapViewRenderer {
       onKeydown: (event) => this.actions?.handleKeydown(event),
       onScroll: () => this.persistence?.scheduleUiStateSave(),
       onFocusCanvas: () => this.focusCanvas(),
-      onScaleChange: (scale) => this.setScale(scale),
+      onScaleChange: (scaleDelta, center) => this.setScale(this.readViewportFromDom().scale + scaleDelta, center),
       onSelectNode: (nodeId) => {
         this.store.setSelectedNode(nodeId);
         this.updateSelectionView();
@@ -243,17 +258,37 @@ export class MindmapViewRenderer {
     this.renderBodyPane(split);
   }
 
-  private setScale(scale: number): void {
-    this.store.viewport = normalizeViewportState({ ...this.readViewportFromDom(), scale });
+  private setScale(scale: number, center?: ViewportPoint): void {
+    this.store.viewport = getZoomedViewportState(
+      this.readViewportFromDom(),
+      scale,
+      getElementViewportSize(this.store.canvasEl),
+      center
+    );
+    this.applyViewportState();
+  }
+
+  private fitToView(): void {
+    const canvas = this.store.canvasEl;
+    if (!canvas) return;
     const layout = layoutMindmap(this.store.root);
-    const scrollArea = this.store.surfaceEl?.parentElement;
-    if (scrollArea) {
-      scrollArea.style.width = `${layout.width * this.store.viewport.scale}px`;
-      scrollArea.style.height = `${layout.height * this.store.viewport.scale}px`;
-    }
-    if (this.store.surfaceEl) {
-      this.store.surfaceEl.style.transform = `scale(${this.store.viewport.scale})`;
-    }
+    this.store.viewport = getFitViewportState(
+      { width: layout.width, height: layout.height },
+      getElementViewportSize(this.store.canvasEl)
+    );
+    this.applyViewportState(layout);
+    this.focusCanvas();
+  }
+
+  private applyViewportState(layout = layoutMindmap(this.store.root)): void {
+    this.store.viewport = normalizeViewportState(this.store.viewport);
+    applyViewportToDom({
+      canvasEl: this.store.canvasEl,
+      surfaceEl: this.store.surfaceEl,
+      zoomLabelEl: this.containerEl.querySelector<HTMLElement>(".heading-mindmap-zoom-label"),
+      layoutSize: { width: layout.width, height: layout.height },
+      viewport: this.store.viewport
+    });
     this.persistence?.scheduleUiStateSave();
   }
 

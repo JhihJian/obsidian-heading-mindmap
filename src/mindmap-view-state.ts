@@ -18,18 +18,24 @@ export type StoredMindmapState = {
   bodyPane?: BodyPaneSizeState;
 };
 
-const MIN_SCALE = 0.5;
-const MAX_SCALE = 2;
+export const MIN_VIEWPORT_SCALE = 0.1;
+export const MAX_VIEWPORT_SCALE = 2;
+export const DEFAULT_VIEWPORT_SCALE = 1;
+export const VIEWPORT_SCALE_STEP = 0.1;
 const DEFAULT_BODY_PANE_HEIGHT_RATIO = 0.55;
 const MIN_BODY_PANE_HEIGHT_RATIO = 0.25;
 const MAX_BODY_PANE_HEIGHT_RATIO = 0.8;
 
 export function normalizeViewportState(value: Partial<MindmapViewportState> | undefined): MindmapViewportState {
   return {
-    scale: clampFinite(value?.scale ?? 1, MIN_SCALE, MAX_SCALE),
+    scale: clampViewportScale(value?.scale ?? DEFAULT_VIEWPORT_SCALE),
     scrollLeft: Math.max(0, finiteOrZero(value?.scrollLeft)),
     scrollTop: Math.max(0, finiteOrZero(value?.scrollTop))
   };
+}
+
+export function clampViewportScale(value: number): number {
+  return clampFinite(value, MIN_VIEWPORT_SCALE, MAX_VIEWPORT_SCALE);
 }
 
 export function normalizeBodyPaneSize(value: Partial<BodyPaneSizeState> | undefined): BodyPaneSizeState {

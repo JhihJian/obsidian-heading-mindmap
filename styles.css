@@ -19,6 +19,7 @@
 
 .heading-mindmap-toolbar-title {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
@@ -27,11 +28,17 @@
 .heading-mindmap-toolbar-title span {
   color: var(--text-normal);
   font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .heading-mindmap-toolbar-title small {
   color: var(--text-muted);
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .heading-mindmap-toolbar-actions {
@@ -47,6 +54,26 @@
   height: 30px;
   justify-content: center;
   width: 30px;
+}
+
+.heading-mindmap-zoom-controls {
+  align-items: center;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 2px;
+}
+
+.heading-mindmap-zoom-label {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: center;
 }
 
 .heading-mindmap-toolbar-toggle {
@@ -111,6 +138,7 @@
 .heading-mindmap-scroll-area {
   min-height: 100%;
   min-width: 100%;
+  overflow: hidden;
   position: relative;
 }
 
@@ -326,5 +354,34 @@
   .heading-mindmap-toolbar {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .heading-mindmap-toolbar-title {
+    width: 100%;
+  }
+
+  .heading-mindmap-toolbar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .heading-mindmap-toolbar-actions button {
+    height: 44px;
+    width: 44px;
+  }
+
+  .heading-mindmap-zoom-controls {
+    flex: 1 1 220px;
+    justify-content: center;
+  }
+
+  .heading-mindmap-zoom-label {
+    min-width: 48px;
+  }
+
+  .heading-mindmap-toolbar-toggle {
+    min-height: 44px;
   }
 }

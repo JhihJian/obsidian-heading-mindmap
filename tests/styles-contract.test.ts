@@ -44,4 +44,21 @@ describe("styles contract", () => {
     expect(titleInputRule).toContain("overflow-wrap: anywhere");
     expect(titleInputRule).toContain("white-space: pre-wrap");
   });
+
+  it("移动端工具栏提供可触控的缩放控件，并避免长路径挤压布局", () => {
+    const toolbarTitleRule = getRule(".heading-mindmap-toolbar-title");
+    const zoomControlsRule = getRule(".heading-mindmap-zoom-controls");
+    const zoomLabelRule = getRule(".heading-mindmap-zoom-label");
+    const scrollAreaRule = getRule(".heading-mindmap-scroll-area");
+
+    expect(toolbarTitleRule).toContain("min-width: 0");
+    expect(scrollAreaRule).toContain("overflow: hidden");
+    expect(zoomControlsRule).toContain("display: inline-flex");
+    expect(zoomControlsRule).toContain("border-radius: 8px");
+    expect(zoomLabelRule).toContain("font-variant-numeric: tabular-nums");
+    expect(css).toContain(".heading-mindmap-toolbar-actions button");
+    expect(css).toContain("height: 44px");
+    expect(css).toContain("width: 44px");
+    expect(css).toContain("flex-wrap: wrap");
+  });
 });

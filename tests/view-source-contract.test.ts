@@ -46,7 +46,8 @@ describe("view source contract", () => {
     expect(rendererSource).toContain("setBodyPaneMinimized");
     expect(bodyPaneDomSource).toContain("new ButtonComponent(actions)");
     expect(bodyPaneDomSource).toContain("toggleBodyPaneMode");
-    expect(toolbarDomSource).toContain("new ButtonComponent(actions)");
+    expect(toolbarDomSource).toContain("renderToolbarButton(actions");
+    expect(toolbarDomSource).toContain("heading-mindmap-zoom-controls");
     expect(rendererSource).toContain("onAddFileNode");
     expect(actionsSource).toContain("openFilePicker");
   });
