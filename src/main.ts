@@ -1,6 +1,7 @@
-import { Plugin, TFile, normalizePath } from "obsidian";
+import { Plugin, TFile, getLanguage, normalizePath } from "obsidian";
 import { chooseMindmapSourcePath } from "./active-mindmap-file";
 import { resolveFileNodePath } from "./file-node-target";
+import { getHeadingMindmapStrings } from "./i18n";
 import {
   buildOutlineTreeFromMarkdown,
   createStarterMindmap,
@@ -27,6 +28,7 @@ export default class HeadingMindmapPlugin extends Plugin {
 
   async onload(): Promise<void> {
     this.data = normalizePluginData(await this.loadData());
+    const strings = getHeadingMindmapStrings(getLanguage());
 
     this.registerView(
       VIEW_TYPE_MINDMAP,
@@ -42,13 +44,13 @@ export default class HeadingMindmapPlugin extends Plugin {
       })
     );
 
-    this.addRibbonIcon("git-fork", "打开思维导图", () => {
+    this.addRibbonIcon("git-fork", strings.ribbon.open, () => {
       void this.activateView();
     });
 
     this.addCommand({
       id: "open",
-      name: "打开思维导图",
+      name: strings.commands.open,
       callback: () => {
         void this.activateView();
       }
@@ -56,7 +58,7 @@ export default class HeadingMindmapPlugin extends Plugin {
 
     this.addCommand({
       id: "toggle-list-item-expansion",
-      name: "切换正文列表项在导图中展示",
+      name: strings.commands.toggleListItemExpansion,
       callback: () => {
         const view = this.app.workspace.getActiveViewOfType(HeadingMindmapView);
         if (!view) return;
