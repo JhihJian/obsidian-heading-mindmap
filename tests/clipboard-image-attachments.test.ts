@@ -44,9 +44,9 @@ describe("clipboard image attachments", () => {
   });
 
   it("清理不适合放入附件名的字符", () => {
-    const file = new File(["image"], "bad:name?.png", { type: "image/png" });
+    const file = new File(["image"], "bad:\u0000name?.png", { type: "image/png" });
 
-    expect(getClipboardImageFilename(file, 0, fixedNow)).toBe("bad-name-.png");
+    expect(getClipboardImageFilename(file, 0, fixedNow)).toBe("bad--name-.png");
   });
 
   it("把普通 Markdown 链接规范化为图片嵌入链接", () => {

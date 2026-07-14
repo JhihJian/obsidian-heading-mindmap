@@ -34,21 +34,13 @@ export interface DocumentShortcutTargetState {
 }
 
 export function getMindmapShortcutAction(event: ShortcutKeyLike): MindmapShortcutAction | null {
-  if (event.altKey && event.key === "ArrowUp") return { type: "move-sibling", direction: "up" };
-  if (event.altKey && event.key === "ArrowDown") return { type: "move-sibling", direction: "down" };
+  const siblingMovement = getSiblingMovementAction(event);
+  if (siblingMovement) return siblingMovement;
 
   const direction = getKeyDirection(event.key);
   if (direction) return { type: "select", direction };
 
-  if (event.key === "Tab" && event.shiftKey) return { type: "promote" };
-  if (event.key === "Tab") return { type: "add-child" };
-  if (event.key === "Enter" && event.shiftKey) return { type: "add-sibling" };
-  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) return { type: "focus-body" };
-  if (event.key === "Enter") return { type: "edit-title" };
-  if (event.key === " ") return { type: "toggle-fold" };
-  if (event.key === "Delete") return { type: "delete" };
-
-  return null;
+  return getTabAction(event) ?? getEnterAction(event) ?? getSimpleKeyAction(event.key);
 }
 
 export function shouldIgnoreMindmapShortcutTarget(target: ShortcutTargetState): boolean {
@@ -65,6 +57,31 @@ export function shouldHandleDocumentShortcutTarget(target: DocumentShortcutTarge
   if (!target.activeViewIsMindmap) return false;
   if (target.targetInsideView) return true;
   return target.activeElementIsPageRoot;
+}
+
+function getSiblingMovementAction(event: ShortcutKeyLike): MindmapShortcutAction | null {
+  if (!event.altKey) return null;
+  if (event.key === "ArrowUp") return { type: "move-sibling", direction: "up" };
+  if (event.key === "ArrowDown") return { type: "move-sibling", direction: "down" };
+  return null;
+}
+
+function getTabAction(event: ShortcutKeyLike): MindmapShortcutAction | null {
+  if (event.key !== "Tab") return null;
+  return event.shiftKey ? { type: "promote" } : { type: "add-child" };
+}
+
+function getEnterAction(event: ShortcutKeyLike): MindmapShortcutAction | null {
+  if (event.key !== "Enter") return null;
+  if (event.shiftKey) return { type: "add-sibling" };
+  if (event.ctrlKey || event.metaKey) return { type: "focus-body" };
+  return { type: "edit-title" };
+}
+
+function getSimpleKeyAction(key: string): MindmapShortcutAction | null {
+  if (key === " ") return { type: "toggle-fold" };
+  if (key === "Delete") return { type: "delete" };
+  return null;
 }
 
 function getKeyDirection(key: string): MindmapDirection | null {

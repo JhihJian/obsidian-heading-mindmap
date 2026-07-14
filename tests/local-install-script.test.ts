@@ -11,7 +11,9 @@ describe("local install script", () => {
   });
 
   it("package.json 提供本机安装命令", () => {
-    const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+    const pkg = JSON.parse(readFileSync("package.json", "utf8")) as {
+      scripts: Record<string, string>;
+    };
 
     expect(pkg.scripts["install:local"]).toBe("npm run build && node scripts/install-local.mjs");
   });

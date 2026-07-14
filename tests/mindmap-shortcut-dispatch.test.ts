@@ -15,7 +15,7 @@ function shortcutEvent(key: string, options: Partial<KeyboardEvent> = {}): Keybo
   return {
     key,
     prevented: false,
-    preventDefault() {
+    preventDefault(this: KeyboardEvent & { prevented: boolean }) {
       this.prevented = true;
     },
     ...options

@@ -28,7 +28,7 @@ describe("view source contract", () => {
   it("视图相关单文件保持在 300 行以内", () => {
     for (const file of viewModuleFiles) {
       const lineCount = readFileSync(file, "utf8").split(/\r?\n/).length;
-      expect(lineCount, file).toBeLessThanOrEqual(300);
+      expect(lineCount).toBeLessThanOrEqual(300);
     }
   });
 

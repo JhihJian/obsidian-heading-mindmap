@@ -44,10 +44,11 @@ export class HeadingMindmapView extends ItemView {
     return "git-fork";
   }
 
-  async onOpen(): Promise<void> {
+  onOpen(): Promise<void> {
     this.registerDomEvent(activeDocument, "keydown", (event) => {
       this.actions.handleDocumentKeydown(event);
     });
+    return Promise.resolve();
   }
 
   async onClose(): Promise<void> {

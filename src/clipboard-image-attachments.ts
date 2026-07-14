@@ -110,7 +110,10 @@ function getImageExtensionFromName(name: string): string | undefined {
 function sanitizeAttachmentFilename(name: string): string {
   const basename = name.split(/[\\/]/).pop()?.trim() ?? "";
   return basename
-    .replace(/[<>:"|?*\x00-\x1f]/g, "-")
+    .replace(/[<>:"|?*]/g, "-")
+    .split("")
+    .map((character) => character.charCodeAt(0) <= 0x1f ? "-" : character)
+    .join("")
     .replace(/\s+/g, " ")
     .replace(/^\.+/, "")
     .slice(0, 128);

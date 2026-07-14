@@ -31,7 +31,7 @@ describe("file outline runtime", () => {
       root,
       { path: "notes/target.md" },
       (node) => ({ path: node.filePath ?? "" }),
-      async () => ["# 目标", "", "## 子目标"].join("\n")
+      () => Promise.resolve(["# 目标", "", "## 子目标"].join("\n"))
     );
 
     expect(refreshed).toBe(true);
@@ -45,7 +45,7 @@ describe("file outline runtime", () => {
     const result = await expandFileOutlineNode(
       fileNode,
       () => ({ path: "notes/empty.md" }),
-      async () => "没有标题的正文"
+      () => Promise.resolve("没有标题的正文")
     );
 
     expect(result).toEqual({ ok: true, empty: true });
@@ -57,7 +57,7 @@ describe("file outline runtime", () => {
     const result = await expandFileOutlineNode(
       { ...createFileNode("notes/missing.md"), filePath: undefined },
       () => null,
-      async () => ""
+      () => Promise.resolve("")
     );
 
     expect(result).toEqual({ ok: false, message: "此文件节点缺少文件路径。" });
