@@ -9,7 +9,11 @@ const viewModuleFiles = [
   "src/mindmap-view-renderer.ts",
   "src/mindmap-view-store.ts",
   "src/mindmap-canvas-dom.ts",
+  "src/mindmap-node-display.ts",
+  "src/mindmap-node-measurer.ts",
+  "src/mindmap-viewport-runtime.ts",
   "src/mindmap-toolbar-dom.ts",
+  "src/mindmap-shortcut-help-modal.ts",
   "src/body-pane-runtime.ts",
   "src/body-pane-resizer.ts"
 ];
@@ -23,6 +27,9 @@ const actionsSource = readFileSync("src/mindmap-view-actions.ts", "utf8");
 const loaderSource = readFileSync("src/mindmap-view-loader.ts", "utf8");
 const rendererSource = readFileSync("src/mindmap-view-renderer.ts", "utf8");
 const toolbarDomSource = readFileSync("src/mindmap-toolbar-dom.ts", "utf8");
+const pickerSource = readFileSync("src/markdown-file-picker-modal.ts", "utf8");
+const shortcutHelpSource = readFileSync("src/mindmap-shortcut-help-modal.ts", "utf8");
+const nodeMeasurerSource = readFileSync("src/mindmap-node-measurer.ts", "utf8");
 
 describe("view source contract", () => {
   it("视图相关单文件保持在 300 行以内", () => {
@@ -48,8 +55,16 @@ describe("view source contract", () => {
     expect(bodyPaneDomSource).toContain("toggleBodyPaneMode");
     expect(toolbarDomSource).toContain("renderToolbarButton(actions");
     expect(toolbarDomSource).toContain("heading-mindmap-zoom-controls");
+    expect(toolbarDomSource).toContain("onShowShortcutHelp");
+    expect(shortcutHelpSource).toContain("快捷键速查");
+    expect(actionsSource).toContain("MindmapShortcutHelpModal");
+    expect(pickerSource).toContain("FuzzySuggestModal");
+    expect(pickerSource).toContain("搜索 Markdown 文件路径");
     expect(rendererSource).toContain("onAddFileNode");
     expect(actionsSource).toContain("openFilePicker");
+    expect(nodeMeasurerSource).toContain("getBoundingClientRect");
+    expect(nodeMeasurerSource).toContain("NODE_WIDTH_SAFETY_MARGIN");
+    expect(nodeMeasurerSource).toContain("MindmapNodeSizeCache");
   });
 
   it("正文区最小化时隐藏正文内容和拖拽条，并通过正文状态恢复", () => {
@@ -70,6 +85,8 @@ describe("view source contract", () => {
     expect(bodyPaneRuntimeSource).toContain("getAvailablePathForAttachment");
     expect(bodyPaneRuntimeSource).toContain("createBinary");
     expect(bodyPaneRuntimeSource).toContain("generateMarkdownLink");
+    expect(bodyPaneRuntimeSource).toContain("readingView.ondblclick");
+    expect(bodyPaneRuntimeSource).toContain("onEnterEdit");
   });
 
   it("视图类只做协调，不直接承载已拆出的 DOM、编辑器和操作分发细节", () => {

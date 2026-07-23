@@ -39,6 +39,22 @@ describe("file outline runtime", () => {
     expect(fileNode.children[0].children.map((node) => node.title)).toEqual(["子目标"]);
   });
 
+  it("展开文件节点时只挂载目标文件标题，不重复挂载目标文件根节点", async () => {
+    const fileNode = createFileNode("notes/target.md");
+    const root = rootWithFile(fileNode);
+
+    await expandFileOutlineNode(
+      fileNode,
+      () => ({ path: "notes/target.md" }),
+      () => Promise.resolve(["# 目标", "", "## 子目标"].join("\n"))
+    );
+
+    expect(root.children).toEqual([fileNode]);
+    expect(fileNode.children.map((node) => node.title)).toEqual(["目标"]);
+    expect(fileNode.children[0].children.map((node) => node.title)).toEqual(["子目标"]);
+    expect(fileNode.children.some((node) => node.type === "document" || node.title === "target")).toBe(false);
+  });
+
   it("展开文件节点时读取目标文件并返回空大纲状态", async () => {
     const fileNode = createFileNode("notes/empty.md");
 

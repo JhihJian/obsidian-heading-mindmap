@@ -14,12 +14,10 @@ import {
 import { isReadonlyOutlineNode, READONLY_OUTLINE_MESSAGE } from "./mindmap-operations";
 import { findNode } from "./mindmap-navigation";
 import { renderMindmapCanvas } from "./mindmap-canvas-dom";
+import type { MindmapNodeSizeCache } from "./mindmap-node-measurer";
 import { renderMindmapToolbar } from "./mindmap-toolbar-dom";
-import { layoutMindmap } from "./tree-layout";
-import {
-  applyViewportToDom, getElementViewportSize, getFitViewportState, getZoomedViewportState,
-  preserveViewportForRender, type ViewportPoint
-} from "./viewport-dom";
+import { MindmapViewportRuntime } from "./mindmap-viewport-runtime";
+import { preserveViewportForRender } from "./viewport-dom";
 import {
   DEFAULT_VIEWPORT_SCALE,
   VIEWPORT_SCALE_STEP,
@@ -36,8 +34,18 @@ import type { MindmapViewPersistence } from "./mindmap-view-persistence";
 export class MindmapViewRenderer {
   actions?: MindmapViewActions;
   persistence?: MindmapViewPersistence;
+  private readonly nodeSizeCache: MindmapNodeSizeCache = new Map();
+  private readonly viewportRuntime: MindmapViewportRuntime;
 
-  constructor(private readonly store: MindmapViewStore, private readonly containerEl: HTMLElement) {}
+  constructor(private readonly store: MindmapViewStore, private readonly containerEl: HTMLElement) {
+    this.viewportRuntime = new MindmapViewportRuntime({
+      store,
+      containerEl,
+      getViewport: () => this.readViewportFromDom(),
+      onFocusCanvas: () => this.focusCanvas(),
+      onScheduleSave: () => this.persistence?.scheduleUiStateSave()
+    });
+  }
 
   render(): void {
     const container = this.containerEl.children[1] as HTMLElement;
@@ -56,14 +64,15 @@ export class MindmapViewRenderer {
       path: this.store.currentFile?.path ?? "选择或创建一个 Markdown 导图文件",
       scale: this.store.viewport.scale,
       expandListItems: this.store.plugin.getExpandListItems(),
-      onZoomOut: () => this.setScale(this.readViewportFromDom().scale - VIEWPORT_SCALE_STEP),
-      onZoomIn: () => this.setScale(this.readViewportFromDom().scale + VIEWPORT_SCALE_STEP),
-      onFitToView: () => this.fitToView(),
-      onResetZoom: () => this.setScale(DEFAULT_VIEWPORT_SCALE),
+      onZoomOut: () => this.viewportRuntime.setScale(this.readViewportFromDom().scale - VIEWPORT_SCALE_STEP),
+      onZoomIn: () => this.viewportRuntime.setScale(this.readViewportFromDom().scale + VIEWPORT_SCALE_STEP),
+      onFitToView: () => this.viewportRuntime.fitToView(),
+      onResetZoom: () => this.viewportRuntime.setScale(DEFAULT_VIEWPORT_SCALE),
       onToggleListItems: (value) => {
         void this.actions?.setListItemExpansion(value);
       },
-      onAddFileNode: () => this.actions?.openFilePicker()
+      onAddFileNode: () => this.actions?.openFilePicker(),
+      onShowShortcutHelp: () => this.actions?.openShortcutHelp()
     });
 
     const split = container.createDiv({ cls: "heading-mindmap-split" });
@@ -73,13 +82,16 @@ export class MindmapViewRenderer {
     this.store.canvasEl = split.createDiv({ cls: "heading-mindmap-canvas" });
     this.store.surfaceEl = renderMindmapCanvas(this.store.canvasEl, {
       root: this.store.root,
+      nodeSizeCache: this.nodeSizeCache,
       viewport: this.store.viewport,
       selectedNodeId: this.store.selectedNodeId,
       titleEditingNodeId: this.store.titleEditingNodeId,
       onKeydown: (event) => this.actions?.handleKeydown(event),
       onScroll: () => this.persistence?.scheduleUiStateSave(),
       onFocusCanvas: () => this.focusCanvas(),
-      onScaleChange: (scaleDelta, center) => this.setScale(this.readViewportFromDom().scale + scaleDelta, center),
+      onScaleChange: (scaleDelta, center) => {
+        this.viewportRuntime.setScale(this.readViewportFromDom().scale + scaleDelta, center);
+      },
       onSelectNode: (nodeId) => {
         this.store.setSelectedNode(nodeId);
         this.updateSelectionView();
@@ -107,6 +119,11 @@ export class MindmapViewRenderer {
     if (options.focusCanvas) {
       window.setTimeout(() => this.focusCanvas(), 0);
     }
+  }
+
+  handleCssChange(): void {
+    this.nodeSizeCache.clear();
+    this.renderPreservingViewport();
   }
 
   readViewportFromDom(): MindmapViewportState {
@@ -220,7 +237,11 @@ export class MindmapViewRenderer {
     if (this.store.bodyPaneMode === "source" && !readonly) {
       this.store.bodyPaneRuntime.renderSource(pane, node);
     } else {
-      this.store.bodyPaneRuntime.renderPreview(pane, node);
+      this.store.bodyPaneRuntime.renderPreview(
+        pane,
+        node,
+        readonly ? undefined : () => void this.setBodyPaneMode("source", { focusEditor: true })
+      );
     }
   }
 
@@ -256,40 +277,6 @@ export class MindmapViewRenderer {
     oldPane.remove();
     this.applyBodyPaneSizeToSplit(split);
     this.renderBodyPane(split);
-  }
-
-  private setScale(scale: number, center?: ViewportPoint): void {
-    this.store.viewport = getZoomedViewportState(
-      this.readViewportFromDom(),
-      scale,
-      getElementViewportSize(this.store.canvasEl),
-      center
-    );
-    this.applyViewportState();
-  }
-
-  private fitToView(): void {
-    const canvas = this.store.canvasEl;
-    if (!canvas) return;
-    const layout = layoutMindmap(this.store.root);
-    this.store.viewport = getFitViewportState(
-      { width: layout.width, height: layout.height },
-      getElementViewportSize(this.store.canvasEl)
-    );
-    this.applyViewportState(layout);
-    this.focusCanvas();
-  }
-
-  private applyViewportState(layout = layoutMindmap(this.store.root)): void {
-    this.store.viewport = normalizeViewportState(this.store.viewport);
-    applyViewportToDom({
-      canvasEl: this.store.canvasEl,
-      surfaceEl: this.store.surfaceEl,
-      zoomLabelEl: this.containerEl.querySelector<HTMLElement>(".heading-mindmap-zoom-label"),
-      layoutSize: { width: layout.width, height: layout.height },
-      viewport: this.store.viewport
-    });
-    this.persistence?.scheduleUiStateSave();
   }
 
   private getSelectedNode(): MindNode {

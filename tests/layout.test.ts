@@ -71,4 +71,25 @@ describe("layoutMindmap", () => {
     expect(positions.long.height).toBeGreaterThan(positions.short.height);
     expect(positions.short.y).toBeGreaterThanOrEqual(positions.long.y + positions.long.height + 40);
   });
+
+  it("允许使用渲染层实测的节点尺寸进行布局", () => {
+    const root: MindNode = {
+      ...createTextNode("root"),
+      id: "root",
+      children: [{ ...createTextNode("child"), id: "child" }]
+    };
+
+    const sizes = {
+      root: { width: 300, height: 70 },
+      child: { width: 360, height: 90 }
+    };
+    const layout = layoutMindmap(root, (node) => sizes[node.id as keyof typeof sizes]);
+    const positions = Object.fromEntries(layout.nodes.map((node) => [node.id, node]));
+
+    expect(positions.root.width).toBe(300);
+    expect(positions.root.height).toBe(70);
+    expect(positions.child.width).toBe(360);
+    expect(positions.child.height).toBe(90);
+    expect(positions.child.x).toBe(positions.root.x + positions.root.width + 120);
+  });
 });

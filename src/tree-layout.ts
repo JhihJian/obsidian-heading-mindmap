@@ -21,22 +21,24 @@ export type MindmapLayout = {
   height: number;
 };
 
-const NODE_WIDTH = 240;
-const NODE_HEIGHT = 58;
+export const NODE_WIDTH = 240;
+export const NODE_HEIGHT = 58;
 const HORIZONTAL_GAP = 120;
 const VERTICAL_GAP = 40;
 const PADDING = 48;
-const MAX_NODE_WIDTH = 420;
+export const MAX_NODE_WIDTH = 420;
 const NODE_HORIZONTAL_PADDING = 20;
-const NODE_VERTICAL_PADDING = 20;
+export const NODE_VERTICAL_PADDING = 20;
 const NODE_BADGE_GAP = 8;
 const TITLE_LINE_HEIGHT = 20;
 const MIN_TITLE_WIDTH = 80;
 
-type NodeSize = {
+export type NodeSize = {
   width: number;
   height: number;
 };
+
+export type NodeSizeResolver = (node: MindNode) => NodeSize;
 
 type SubtreeLayout = {
   nodes: LayoutNode[];
@@ -46,8 +48,8 @@ type SubtreeLayout = {
   rootCenterY: number;
 };
 
-export function layoutMindmap(root: MindNode): MindmapLayout {
-  const subtree = layoutSubtree(root);
+export function layoutMindmap(root: MindNode, resolveNodeSize: NodeSizeResolver = getEstimatedNodeSize): MindmapLayout {
+  const subtree = layoutSubtree(root, resolveNodeSize);
   const nodes = subtree.nodes.map((node) => ({
     ...node,
     x: node.x + PADDING,
@@ -62,8 +64,8 @@ export function layoutMindmap(root: MindNode): MindmapLayout {
   };
 }
 
-function layoutSubtree(node: MindNode): SubtreeLayout {
-  const size = getNodeSize(node);
+function layoutSubtree(node: MindNode, resolveNodeSize: NodeSizeResolver): SubtreeLayout {
+  const size = resolveNodeSize(node);
   const visibleChildren = node.childrenCollapsed ? [] : node.children;
   const rootNode: LayoutNode = {
     id: node.id,
@@ -92,7 +94,7 @@ function layoutSubtree(node: MindNode): SubtreeLayout {
   let maxRight = size.width;
 
   for (const child of visibleChildren) {
-    const childLayout = layoutSubtree(child);
+    const childLayout = layoutSubtree(child, resolveNodeSize);
     childRootCenters.push(nextChildY + childLayout.rootCenterY);
     childNodes.push(
       ...childLayout.nodes.map((layoutNode) => ({
@@ -131,7 +133,7 @@ function layoutSubtree(node: MindNode): SubtreeLayout {
   };
 }
 
-function getNodeSize(node: MindNode): NodeSize {
+export function getEstimatedNodeSize(node: MindNode): NodeSize {
   const titleWidth = estimateTitleWidth(node.title);
   const badgeWidth = getBadgeWidth(node);
   const chromeWidth = NODE_HORIZONTAL_PADDING + NODE_BADGE_GAP + badgeWidth;

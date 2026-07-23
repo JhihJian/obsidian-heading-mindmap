@@ -1,44 +1,35 @@
-import { Modal, Setting, TFile } from "obsidian";
+import { FuzzySuggestModal, type TFile } from "obsidian";
 import { getFileNodeOptions } from "./markdown-file-options";
 import type HeadingMindmapPlugin from "./main";
 
-export class MarkdownFilePickerModal extends Modal {
-  private plugin: HeadingMindmapPlugin;
-  private currentFilePath?: string;
-  private onChoose: (file: TFile) => void;
+export class MarkdownFilePickerModal extends FuzzySuggestModal<TFile> {
+  private readonly markdownFiles: TFile[];
+  private readonly onChoose: (file: TFile) => void;
 
   constructor(plugin: HeadingMindmapPlugin, currentFilePath: string | undefined, onChoose: (file: TFile) => void) {
     super(plugin.app);
-    this.plugin = plugin;
-    this.currentFilePath = currentFilePath;
+    this.markdownFiles = getFileNodeOptions(plugin.app.vault.getMarkdownFiles(), currentFilePath);
     this.onChoose = onChoose;
+    this.emptyStateText = "没有匹配的 Markdown 文件";
   }
 
-  onOpen(): void {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h2", { text: "选择 Markdown 文件" });
+  async onOpen(): Promise<void> {
+    await super.onOpen();
+    this.setPlaceholder("搜索 Markdown 文件路径");
+    this.inputEl.setAttr("aria-label", "搜索 Markdown 文件");
+  }
 
-    const markdownFiles = getFileNodeOptions(this.plugin.app.vault.getMarkdownFiles(), this.currentFilePath);
-    new Setting(contentEl)
-      .setName("文件路径")
-      .setDesc("选择后会在当前选中节点下新增一个文件节点。")
-      .addDropdown((dropdown) => {
-        for (const file of markdownFiles) {
-          dropdown.addOption(file.path, file.path);
-        }
-        dropdown.onChange((value) => {
-          const file = this.plugin.app.vault.getAbstractFileByPath(value);
-          if (file instanceof TFile) {
-            this.onChoose(file);
-            this.close();
-          }
-        });
-      });
+  getItems(): TFile[] {
+    return this.markdownFiles;
+  }
 
-    if (markdownFiles.length === 0) {
-      contentEl.createEl("p", { text: "当前库里没有可添加的其他 Markdown 文件。" });
-    }
+  getItemText(file: TFile): string {
+    return file.path;
+  }
+
+  onChooseItem(file: TFile): void {
+    this.onChoose(file);
+    this.close();
   }
 
   onClose(): void {

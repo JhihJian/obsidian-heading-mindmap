@@ -39,10 +39,14 @@ describe("styles contract", () => {
     expect(nodeRule).toContain("overflow: visible");
     expect(titleRule).toContain("overflow-wrap: anywhere");
     expect(titleRule).toContain("white-space: normal");
+    expect(titleRule).toContain("font-variant-numeric: tabular-nums");
     expect(titleRule).not.toContain("text-overflow");
     expect(titleRule).not.toContain("nowrap");
     expect(titleInputRule).toContain("overflow-wrap: anywhere");
     expect(titleInputRule).toContain("white-space: pre-wrap");
+    expect(titleInputRule).toContain("font-variant-numeric: tabular-nums");
+    expect(css).toContain(".heading-mindmap-node-measure-layer");
+    expect(getRule(".heading-mindmap-node-measure-layer")).toContain("visibility: hidden");
   });
 
   it("移动端工具栏提供可触控的缩放控件，并避免长路径挤压布局", () => {

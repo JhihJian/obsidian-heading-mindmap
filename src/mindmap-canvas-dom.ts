@@ -1,4 +1,9 @@
 import type { MindNode } from "./mindmap-model";
+import { getNodeBadge } from "./mindmap-node-display";
+import {
+  createMindmapNodeSizeResolver,
+  type MindmapNodeSizeCache
+} from "./mindmap-node-measurer";
 import { shouldChangeSelectedNode } from "./node-selection";
 import { layoutMindmap, type LayoutNode } from "./tree-layout";
 import type { MindmapViewportState } from "./mindmap-view-state";
@@ -10,6 +15,7 @@ export interface MindmapCanvasRenderResult {
 
 export interface MindmapCanvasOptions {
   root: MindNode;
+  nodeSizeCache: MindmapNodeSizeCache;
   viewport: MindmapViewportState;
   selectedNodeId: string;
   titleEditingNodeId: string | null;
@@ -25,7 +31,9 @@ export interface MindmapCanvasOptions {
 }
 
 export function renderMindmapCanvas(canvas: HTMLElement, options: MindmapCanvasOptions): MindmapCanvasRenderResult {
-  const layout = layoutMindmap(options.root);
+  const nodeSizeMeasurer = createMindmapNodeSizeResolver(canvas, options.nodeSizeCache);
+  const layout = layoutMindmap(options.root, nodeSizeMeasurer.resolve);
+  nodeSizeMeasurer.destroy();
   canvas.style.setProperty("--mindmap-width", `${layout.width}px`);
   canvas.style.setProperty("--mindmap-height", `${layout.height}px`);
   canvas.tabIndex = 0;
@@ -72,14 +80,6 @@ export function renderMindmapCanvas(canvas: HTMLElement, options: MindmapCanvasO
 
   restoreViewportScroll(canvas, options.viewport);
   return { surfaceEl: surface };
-}
-
-export function getNodeBadge(node: MindNode): string {
-  if (node.type === "document") return "DOC";
-  if (node.type === "file") return "MD";
-  if (node.type === "heading") return `H${node.headingLevel ?? ""}`;
-  if (node.type === "list-item") return "LIST";
-  return "TEXT";
 }
 
 function renderMindmapEdges(surface: HTMLElement, layout: ReturnType<typeof layoutMindmap>): void {

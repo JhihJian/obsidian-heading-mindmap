@@ -1,5 +1,6 @@
 import { Notice } from "obsidian";
 import { MarkdownFilePickerModal } from "./markdown-file-picker-modal";
+import { MindmapShortcutHelpModal } from "./mindmap-shortcut-help-modal";
 import { getSelectionAfterSubtreeRemoval } from "./node-selection";
 import { addFileChildNode, canEditNodeTitle, isReadonlyOutlineNode, READONLY_OUTLINE_MESSAGE, type OperationResult } from "./mindmap-operations";
 import { dispatchMindmapShortcut } from "./mindmap-shortcut-dispatch";
@@ -127,6 +128,10 @@ export class MindmapViewActions {
       this.applyOperation(addFileChildNode(this.store.root, this.store.selectedNodeId, file.path));
       this.renderer.focusCanvas();
     }).open();
+  }
+
+  openShortcutHelp(): void {
+    new MindmapShortcutHelpModal(this.store.plugin.app).open();
   }
 
   async toggleListItemExpansion(): Promise<void> {

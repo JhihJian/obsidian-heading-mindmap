@@ -54,11 +54,15 @@ export class BodyPaneRuntime {
     this.previewEl = undefined;
   }
 
-  renderPreview(container: HTMLElement, node: MindNode): void {
+  renderPreview(container: HTMLElement, node: MindNode, onEnterEdit?: () => void): void {
     this.destroyEditor();
     const readingView = container.createDiv({
       cls: BODY_READING_VIEW_CLASSES
     });
+    readingView.ondblclick = (event) => {
+      if (!onEnterEdit || isInteractivePreviewTarget(event.target)) return;
+      onEnterEdit();
+    };
     const preview = readingView.createDiv({
       cls: BODY_PREVIEW_CONTENT_CLASSES
     });
@@ -167,4 +171,11 @@ export class BodyPaneRuntime {
     preview.empty();
     preview.appendChild(renderTarget);
   }
+}
+
+function isInteractivePreviewTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    Boolean(target.closest("a, button, input, textarea, select, [contenteditable='true']"))
+  );
 }

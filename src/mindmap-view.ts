@@ -48,6 +48,11 @@ export class HeadingMindmapView extends ItemView {
     this.registerDomEvent(activeDocument, "keydown", (event) => {
       this.actions.handleDocumentKeydown(event);
     });
+    this.registerEvent(
+      this.app.workspace.on("css-change", () => {
+        this.renderer.handleCssChange();
+      })
+    );
     return Promise.resolve();
   }
 

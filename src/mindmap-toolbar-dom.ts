@@ -11,6 +11,7 @@ export interface MindmapToolbarOptions {
   onResetZoom: () => void;
   onToggleListItems: (value: boolean) => void;
   onAddFileNode: () => void;
+  onShowShortcutHelp: () => void;
 }
 
 export function renderMindmapToolbar(toolbar: HTMLElement, options: MindmapToolbarOptions): void {
@@ -40,6 +41,7 @@ export function renderMindmapToolbar(toolbar: HTMLElement, options: MindmapToolb
   setTooltip(listToggleLabel, "在导图中显示当前节点正文里的 Markdown 列表项");
 
   renderToolbarButton(actions, "file-plus", "添加 Markdown 文件节点", options.onAddFileNode);
+  renderToolbarButton(actions, "keyboard", "查看快捷键速查表", options.onShowShortcutHelp);
 }
 
 function renderToolbarButton(
